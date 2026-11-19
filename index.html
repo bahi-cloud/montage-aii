@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
@@ -432,10 +431,10 @@
             flex-direction: column;
             gap: 6px;
         }
-        .clip-card-actions { display: flex; gap: 4px; flex-wrap: wrap; }
+        .clip-card-actions { display: flex; gap: 5px; flex-wrap: wrap; }
         .clip-card-actions button {
-            flex: 0 1 auto;
-            padding: 3px 7px;
+            flex: 1;
+            padding: 4px 6px;
             font-size: 11px;
             border-radius: 6px;
             border: 1px solid var(--border-color);
@@ -444,34 +443,6 @@
             cursor: pointer;
         }
         .clip-card-actions button:hover { background: rgba(59,130,246,0.28); }
-
-        /* مخزن موحّد بقائمتين (فيديو | صوت) + الدمج الموحّد */
-        .clip-group { margin-bottom: 10px; }
-        .clip-group-head {
-            display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
-            font-size: 12.5px; font-weight: 700; color: #cbd5e1; margin: 2px 0 7px;
-        }
-        .clip-group-head .g-count { font-size: 11px; color: #94a3b8; font-weight: 400; }
-        .clip-card.is-selected { border-color: rgba(96,165,250,0.85); box-shadow: inset 0 0 0 1px rgba(96,165,250,0.45); background: rgba(30,58,138,0.35); }
-        .clip-card-top { display: flex; align-items: center; gap: 6px; }
-        .clip-card-top input[type="checkbox"] { width: 15px; height: 15px; accent-color: #3b82f6; cursor: pointer; }
-        .clip-ord {
-            min-width: 20px; height: 20px; padding: 0 4px; border-radius: 999px;
-            background: #2563eb; color: #fff; font-size: 11px; font-weight: 700;
-            display: inline-flex; align-items: center; justify-content: center;
-        }
-        .clip-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #e2e8f0; }
-        .clip-meta { font-size: 11px; color: #94a3b8; }
-        .clip-player { width: 100%; max-height: 150px; border-radius: 6px; background: #000; }
-        .merge-sel-box {
-            border: 1px solid rgba(59,130,246,0.35); border-radius: 12px;
-            padding: 10px 12px; background: rgba(15,23,42,0.75); margin-bottom: 12px;
-        }
-        .merge-sel-summary { font-size: 12.5px; color: #e2e8f0; font-weight: 600; }
-        .merge-sel-summary b { color: #93c5fd; }
-        .merge-sel-hint { font-size: 11.5px; color: #94a3b8; margin-top: 3px; }
-        .storage-meter { height: 5px; border-radius: 999px; background: rgba(148,163,184,0.25); overflow: hidden; width: 110px; }
-        .storage-meter > i { display: block; height: 100%; width: 0; background: linear-gradient(90deg,#3b82f6,#22d3ee); }
 
         /* Progress Bar */
         .progress-wrapper {
@@ -975,6 +946,11 @@
         .job-dock-actions { display: flex; gap: 6px; margin-top: 8px; }
         body.job-active { padding-top: 72px; }
         .plan-err { font-size: 11.5px; color: #fca5a5; padding: 2px 0 4px; white-space: pre-wrap; }
+        .pool-tabs { display: flex; gap: 6px; }
+        .pool-tab { flex: 1; padding: 8px 10px; border-radius: 10px; border: 1px solid var(--border-color); background: rgba(255,255,255,0.04); color: #cbd5e1; cursor: pointer; font-size: 12.5px; }
+        .pool-tab, .pool-tab .badge { white-space: nowrap; }
+        .pool-tab.active { background: rgba(59,130,246,0.25); border-color: #60a5fa; color: #fff; }
+        .clip-card.selected { border-color: #60a5fa; box-shadow: 0 0 0 1px rgba(96,165,250,0.6) inset; background: rgba(59,130,246,0.1); }
     </style>
 </head>
 <body>
@@ -1327,7 +1303,7 @@
                 <span class="desc">يحوّل النص العربي إلى كلام طبيعي، ويعمل دون إنترنت بعد أول تحميل</span>
             </button>
         </div>
-        <div class="tts-note" id="ttsPoolNote">🎙️ كل صوت مولَّد يُحفظ تلقائياً في مخزن الأصوات (أسفل الصفحة)، ويُدمج من تبويب «الصوت والدمج» بزر «دمج المحدد».</div>
+        
         <div class="tts-note" id="ttsNote">سيتم تحميل الأداة مرة واحدة فقط عند أول استخدام (نحو 139 ميغابايت) ثم تعمل دون إنترنت وتُحفظ على جهازك.</div>
         <div class="tts-bar" id="ttsBar" style="display:none;">
             <div class="progress-bar-bg"><div class="progress-bar-fill" id="ttsBarFill"></div></div>
@@ -1341,41 +1317,19 @@
 
     <!-- 5. الصوت والدمج -->
     <div id="tab-audio-wm" class="tab-content">
-        <div class="merge-sel-box" id="mergeSelectedBox">
-            <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap;">
-                <div>
-                    <div class="merge-sel-summary" id="mergeSelSummary">المحدد: لا شيء</div>
-                    <div class="merge-sel-hint" id="mergeSelHint">حدّد مقاطع من المخزن (✓) ثم اضغط «دمج المحدد».</div>
-                </div>
-                <button class="action-btn" data-action="merge_selected" data-optional-file="true" onclick="mergeSelectedClips()" style="padding:9px 18px; flex-direction:row;">🔗 دمج المحدد</button>
-            </div>
-            <div class="custom-controls" style="margin-top:9px;">
-                <label>الطريقة:
-                    <select id="mergeSelMode">
-                        <option value="replace" selected>استبدال الصوت الأصلي</option>
-                        <option value="mix">مزج مع الصوت الأصلي (خفض تلقائي)</option>
-                    </select>
-                </label>
-                <label>مستوى التعليق %: <input type="number" id="mergeSelAudioLevel" value="100" min="0" max="300" style="width:70px;"></label>
-                <label>مستوى الأصلي %: <input type="number" id="mergeSelOrigLevel" value="30" min="0" max="300" style="width:70px;"></label>
-                <label style="display:flex; align-items:center; gap:5px;"><input type="checkbox" id="mergeSelNormalize" checked> تسوية صوت التعليق</label>
-            </div>
-        </div>
-
         <div class="custom-controls" id="mergeAudioBox">
-            <span style="font-weight:bold; font-size:13px; width:100%;">🎬 دمج الصوت مع الفيديو:</span>
-            <label>مصدر الصوت:
-                <select id="mergeAudioSource" onchange="mergeAudioSourceChanged()">
-                    <option value="last_tts">آخر صوت مولَّد</option>
-                    <option value="file">ملف من جهازي</option>
-                    <option value="last_audio">آخر ناتج صوتي</option>
-                </select>
-            </label>
-            <label id="mergeAudioFileWrap" style="display:none;">الملف: <input type="file" id="extraAudioFile" accept="audio/*" style="max-width:200px;"></label>
-            <label>الطريقة:
+            <span style="font-weight:bold; font-size:13px; width:100%;">🎬 دمج الوسائط المحددة (فيديو وصوت):</span>
+            <div id="mergeSelSummary" class="tts-note" style="width:100%;"></div>
+            <label>طريقة الصوت:
                 <select id="mergeAudioMode">
                     <option value="replace">استبدال الصوت الأصلي</option>
                     <option value="mix">مزج مع الصوت الأصلي</option>
+                </select>
+            </label>
+            <label>الربط عند تعدد المقاطع والأصوات:
+                <select id="mergePairing">
+                    <option value="scene_by_scene">كل صوت مع مشهده بالترتيب</option>
+                    <option value="sequence">دمج الأصوات تباعاً على الفيديو كاملاً</option>
                 </select>
             </label>
             <label>مدة الناتج:
@@ -1387,7 +1341,8 @@
             </label>
             <label>مستوى الصوت الجديد %: <input type="number" id="mergeVolNew" value="100" min="0" max="300" style="width:70px;"></label>
             <label>مستوى الأصلي %: <input type="number" id="mergeVolOrig" value="30" min="0" max="300" style="width:70px;"></label>
-            <button class="action-btn" data-action="merge_audio_video" disabled onclick="runMergeAudioVideo()" style="padding: 8px 16px; flex-direction: row;">🎬 دمج الصوت مع الفيديو</button>
+            <label style="display:flex;align-items:center;gap:6px;"><input type="checkbox" id="mergeCompress" checked style="width:auto;"> ضغط الحجم تلقائياً إن كبر (أكثر من 12MB)</label>
+            <button class="action-btn" data-action="merge_selected" disabled onclick="runMergeSelected().catch(()=>{})" style="padding: 8px 16px; flex-direction: row;">🎬 دمج المحدد</button>
         </div>
 
         <div class="buttons-grid">
@@ -1684,39 +1639,29 @@
         </div>
     </div>
 
-    <!-- مخزن موحّد بقائمتين: فيديو | صوت (يحتفظ بآخر 8 من كل نوع) -->
+    <!-- مخزن المقاطع المتتالية للوكيل (يحتفظ بـ 6 إلى 8 مقاطع للمونتاج واللصق) -->
     <div class="clip-pool-bar" id="clipPoolBar">
         <div class="clip-pool-header">
             <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-                <strong style="font-size:13.5px; color:#93c5fd;">🗂️ مخزن المقاطع (فيديو | صوت)</strong>
-                <span class="badge" id="clipPoolCountBadge">0 فيديو · 0 صوت</span>
+                <strong style="font-size:13.5px; color:#93c5fd;">🎞️ مخزن الوسائط</strong>
                 <label style="font-size:12px; color:#cbd5e1; display:flex; align-items:center; gap:5px; cursor:pointer;">
                     <input type="checkbox" id="autoSaveClipPool" checked> حفظ كل ناتج تلقائياً
                 </label>
-                <span style="display:flex; align-items:center; gap:6px; font-size:11px; color:#94a3b8;" title="المساحة المستخدمة على جهازك">
-                    <span class="storage-meter"><i id="storageMeterFill"></i></span>
-                    <span id="storageMeterText">—</span>
-                </span>
+            </div>
+            <div class="pool-tabs">
+                <button type="button" id="poolTabVideo" class="pool-tab active" onclick="poolTab('video')">🎞️ فيديو <span class="badge" id="clipPoolCountBadge">0 / 8</span></button>
+                <button type="button" id="poolTabAudio" class="pool-tab" onclick="poolTab('audio')">🎙️ صوت <span class="badge" id="audioPoolCountBadge">0 / 8</span></button>
             </div>
             <div style="display:flex; gap:7px; flex-wrap:wrap;">
+                <button class="mini-btn" onclick="poolSelectAll()">☑ تحديد الكل</button>
+                <button class="mini-btn" onclick="poolClearSel()">✖ إلغاء التحديد</button>
                 <button class="mini-btn" onclick="saveCurrentOutputToPool()">➕ حفظ الناتج يدوياً</button>
-                <button class="mini-btn" onclick="downloadSelectedClips()">⬇️ تنزيل المحدد</button>
-                <button class="mini-btn" id="poolSelectAllBtn" onclick="toggleSelectAllClips()">☑️ تحديد الكل</button>
                 <button class="mini-btn danger" onclick="clearClipPool()">🗑️ تفريغ</button>
             </div>
+            <div id="poolSelSummary" class="tts-note"></div>
         </div>
-        <div class="clip-group">
-            <div class="clip-group-head">🎬 فيديو <span class="g-count" id="clipVideoCount" dir="ltr">0 / 8</span></div>
-            <div class="clip-pool-list" id="clipPoolList">
-                <span style="font-size:12px; color:var(--text-muted);">لا توجد مقاطع فيديو محفوظة بعد. أي فيديو يُنتج هنا سيُحفظ هنا ليقوم الوكيل بلصقه لاحقاً.</span>
-            </div>
-        </div>
-        <div class="clip-group" style="margin-bottom:0;">
-            <div class="clip-group-head">🎙️ صوت <span class="g-count" id="clipAudioCount" dir="ltr">0 / 8</span></div>
-            <div class="clip-pool-list" id="clipAudioList">
-                <span style="font-size:12px; color:var(--text-muted);">لا توجد أصوات محفوظة بعد. كل صوت مولَّد أو مرفوع يظهر هنا ليدخل في الدمج.</span>
-            </div>
-        </div>
+        <div class="clip-pool-list" id="clipPoolList"></div>
+        <div class="clip-pool-list" id="audioPoolList" style="display:none;"></div>
     </div>
 
     <!-- =========================================================
@@ -2322,8 +2267,6 @@
         return file.type.startsWith('audio/') || /\.(mp3|wav|ogg|m4a|aac|flac)$/i.test(file.name);
     }
 
-    let pooledAudioFiles = new WeakSet(); // منع تكرار إضافة الصوت المرفوع نفسه إلى المخزن
-
     async function handleSelectedFile(file, isOriginal = false) {
         if (isOriginal) originalUploadedFile = file;
         currentFile = file;
@@ -2364,11 +2307,6 @@
         }
 
         log(`[Input] Active file: ${file.name} (${formatBytes(file.size)})${imgMode ? ` [Image ${currentMediaInfo.width}x${currentMediaInfo.height}]` : ''}`);
-        // مصدر صوت من المستخدم ⇒ يدخل مخزن الأصوات ليكون جاهزاً للدمج
-        if (audioMode && isOriginal && !pooledAudioFiles.has(file)) {
-            pooledAudioFiles.add(file);
-            addClipToPool(file, file.name, 'audio').catch(() => {});
-        }
         updateButtonsState();
 
         if (!imgMode && isEngineReady && !isProcessing) await probeCurrentFile();
@@ -2530,9 +2468,8 @@
 
             const data = await ffmpeg.readFile(outputFilename);
             const blob = renderOutput(data, mimeType, outputFilename, mediaType);
-            await window.__pendingPoolSavePromise;
             log(`[Success] Completed: ${outputFilename}`);
-            return { blob, filename: outputFilename, mediaType, clipId: window.__lastPooledClipId || null };
+            return { blob, filename: outputFilename, mediaType };
         } catch (err) {
             if (err.message?.includes('terminate')) {
                 log('[System] Task cancelled by user.');
@@ -2843,19 +2780,10 @@
     }
 
     // =====================================================================
-    // دمج الصوت مع الفيديو (استبدال أو مزج) — يقبل: آخر صوت مولَّد، ملفاً من الجهاز، آخر ناتج صوتي
+    // دمج المحدد: زر واحد يدمج الفيديوهات والأصوات المحددة في مخزن الوسائط
     // =====================================================================
-    let lastTtsResult = null; // { blob, duration, name }
-    function mergeAudioSourceChanged() {
-        const src = document.getElementById('mergeAudioSource').value;
-        document.getElementById('mergeAudioFileWrap').style.display = src === 'file' ? '' : 'none';
-    }
-    function openMergeWithLastTts() {
-        const btn = document.querySelector("button.tab-btn[onclick*='tab-audio-wm']");
-        if (btn) switchTab('tab-audio-wm', btn);
-        const sel = document.getElementById('mergeAudioSource'); sel.value = 'last_tts'; mergeAudioSourceChanged();
-        document.getElementById('mergeAudioBox').scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }
+    let lastTtsResult = null; // { blob, duration, name } — للتوافق مع مسار الاستئناف
+    const MERGE_SIZE_LIMIT = 12 * 1024 * 1024;
     function getBlobAudioDuration(blob) {
         return new Promise(res => {
             const a = new Audio(); const url = URL.createObjectURL(blob);
@@ -2864,7 +2792,7 @@
             setTimeout(() => done(0), 5000); a.src = url;
         });
     }
-    // يبني أوامر الدمج (دالة نقية قابلة للاختبار)
+    // ---------- أوامر نقية (قابلة للاختبار) ----------
     function buildMergeAudioArgs(o) {
         const { mix, vNew, vOrig, videoDur, audioDur, fit, hasOrigAudio } = o;
         const known = audioDur > 0 && videoDur > 0;
@@ -2872,9 +2800,8 @@
         const trim = known && fit === 'audio' && audioDur < videoDur - 0.05;
         const pad = (extend || trim) ? '' : ',apad';
         const nv = `[1:a]volume=${vNew}${pad}[n]`;
-        let fc, aLabel = '[a]';
-        const doMix = mix && hasOrigAudio;
-        if (doMix) {
+        let fc;
+        if (mix && hasOrigAudio) {
             const dur = extend ? 'longest' : trim ? 'shortest' : 'first';
             fc = `[0:a]volume=${vOrig}[o];${nv};[o][n]amix=inputs=2:duration=${dur}:dropout_transition=0,volume=2[a]`;
         } else fc = `[1:a]volume=${vNew}${pad}[a]`;
@@ -2883,40 +2810,152 @@
             fc += `;[0:v]tpad=stop_mode=clone:stop_duration=${(audioDur - videoDur + 0.1).toFixed(2)},format=yuv420p[v]`;
             vmap = '[v]'; vcodec = ['-c:v', 'libx264', '-preset', 'veryfast', '-crf', '23'];
         }
-        return ['-i', '{in}', '-i', '{aud}', '-filter_complex', fc, '-map', vmap, '-map', aLabel, ...vcodec, '-c:a', 'aac', '-b:a', '160k', '-shortest', '-movflags', '+faststart', '{out}'];
+        return ['-i', '{in}', '-i', '{aud}', '-filter_complex', fc, '-map', vmap, '-map', '[a]', ...vcodec, '-c:a', 'aac', '-b:a', '128k', '-ar', '44100', '-ac', '2', '-shortest', '-movflags', '+faststart', '{out}'];
     }
-    async function runMergeAudioVideo(silentAlert = false, params = null) {
-        const fail = (msg) => { if (!silentAlert) alert(msg); return Promise.reject(new Error(msg)); };
-        const p = params && typeof params === 'object' ? params : {};
-        const set = (id, v) => { if (v !== undefined && v !== null) document.getElementById(id).value = v; };
-        set('mergeAudioSource', p.source); set('mergeAudioMode', p.mode); set('mergeAudioFit', p.fit);
-        set('mergeVolNew', p.voiceVolume); set('mergeVolOrig', p.originalVolume);
-        mergeAudioSourceChanged();
-        if (!currentFile || !currentMediaInfo.hasVideo) return fail('اختر فيديو أولاً (ارفعه أو اختره من مخزن المقاطع) ثم أعد المحاولة.');
-        const source = document.getElementById('mergeAudioSource').value;
-        let audioFile = null, audioDur = 0;
-        if (source === 'last_tts') {
-            if (!lastTtsResult) return fail('لا يوجد صوت مولَّد بعد. ولّد صوتاً من تبويب «توليد الصوت» أولاً.');
-            audioFile = new File([lastTtsResult.blob], 'narration.wav', { type: 'audio/wav' }); audioDur = lastTtsResult.duration;
-        } else if (source === 'last_audio') {
-            if (!lastOutputBlob || !String(lastOutputBlob.type).startsWith('audio/')) return fail('آخر ناتج ليس صوتاً.');
-            audioFile = new File([lastOutputBlob], 'last_audio' + (getFileExt(lastOutputName || '') || '.wav'), { type: lastOutputBlob.type });
-            audioDur = await getBlobAudioDuration(lastOutputBlob);
-        } else {
-            const inp = document.getElementById('extraAudioFile');
-            if (!inp.files?.length) return fail('اختر ملف الصوت أولاً.');
-            audioFile = inp.files[0]; audioDur = await getBlobAudioDuration(audioFile);
-        }
-        const pct = id => Math.max(0, Math.min(300, Number(document.getElementById(id).value))) / 100;
-        const args = buildMergeAudioArgs({
-            mix: document.getElementById('mergeAudioMode').value === 'mix',
-            vNew: pct('mergeVolNew').toFixed(2), vOrig: pct('mergeVolOrig').toFixed(2),
-            videoDur: currentMediaInfo.duration || 0, audioDur,
-            fit: document.getElementById('mergeAudioFit').value, hasOrigAudio: !!currentMediaInfo.hasAudio
+    const buildSilentAudioArgs = (inN, outN) => ['-i', inN, '-f', 'lavfi', '-i', 'anullsrc=channel_layout=stereo:sample_rate=44100', '-c:v', 'copy', '-c:a', 'aac', '-b:a', '128k', '-shortest', '-movflags', '+faststart', outN];
+    const buildConcatCopyArgs = (listN, outN) => ['-f', 'concat', '-safe', '0', '-i', listN, '-c', 'copy', '-movflags', '+faststart', outN];
+    function buildConcatReencodeArgs(names, W, H, hasAudio, durs, outN) {
+        W = Math.round(W / 2) * 2; H = Math.round(H / 2) * 2;
+        const any = hasAudio.some(Boolean), args = [];
+        names.forEach(n => args.push('-i', n));
+        let fc = '', cin = '';
+        names.forEach((_, i) => {
+            fc += `[${i}:v]scale=${W}:${H}:force_original_aspect_ratio=decrease,pad=${W}:${H}:(ow-iw)/2:(oh-ih)/2,setsar=1,fps=30,format=yuv420p[v${i}];`;
+            if (any) {
+                fc += hasAudio[i] ? `[${i}:a]aresample=44100,aformat=sample_fmts=fltp:channel_layouts=stereo[a${i}];` : `anullsrc=channel_layout=stereo:sample_rate=44100:d=${Math.max(0.5, durs[i] || 3).toFixed(2)}[a${i}];`;
+                cin += `[v${i}][a${i}]`;
+            } else cin += `[v${i}]`;
         });
-        return executeFFmpeg(args, 'video_with_audio.mp4', 'video/mp4', 'video', 'دمج الصوت مع الفيديو', [
-            { placeholder: '{aud}', virtualName: `merge_audio${getFileExt(audioFile.name) || '.wav'}`, file: audioFile }
-        ], silentAlert);
+        fc += `${cin}concat=n=${names.length}:v=1:a=${any ? 1 : 0}${any ? '[v][a]' : '[v]'}`;
+        args.push('-filter_complex', fc, '-map', '[v]');
+        if (any) args.push('-map', '[a]', '-c:a', 'aac', '-b:a', '128k'); else args.push('-an');
+        args.push('-c:v', 'libx264', '-preset', 'veryfast', '-pix_fmt', 'yuv420p', '-movflags', '+faststart', outN);
+        return args;
+    }
+    function buildAudioConcatArgs(names, outN) {
+        const args = []; names.forEach(n => args.push('-i', n));
+        const fc = names.map((_, i) => `[${i}:a]aresample=44100,aformat=channel_layouts=stereo[a${i}]`).join(';') + ';' + names.map((_, i) => `[a${i}]`).join('') + `concat=n=${names.length}:v=0:a=1[a]`;
+        return [...args, '-filter_complex', fc, '-map', '[a]', '-c:a', 'libmp3lame', '-b:a', '128k', outN];
+    }
+    const buildCompressArgs = (inN, outN) => ['-i', inN, '-c:v', 'libx264', '-crf', '28', '-preset', 'veryfast', '-pix_fmt', 'yuv420p', '-c:a', 'aac', '-b:a', '96k', '-movflags', '+faststart', outN];
+
+    // ---------- تنفيذ ffmpeg ----------
+    const ffDel = names => { for (const n of names) { try { ffmpeg.deleteFile(n); } catch (_) {} } };
+    async function ffExec(args) { const code = await ffmpeg.exec(args); if (code !== 0) throw new Error('فشلت معالجة الوسائط (رمز ' + code + ')'); }
+    const ffPut = async (name, blob) => ffmpeg.writeFile(name, new Uint8Array(await blob.arrayBuffer()));
+    const ffGet = name => ffmpeg.readFile(name);
+    async function ffProbe(name) {
+        customLogCollector = [];
+        try { await ffmpeg.exec(['-i', name]); } catch (_) {}
+        const logs = (customLogCollector || []).join('\n'); customLogCollector = null;
+        const v = logs.match(/Video: (\w+)[^\n]*?[,\s](\d{2,5})x(\d{2,5})(?=[\s,\[])/);
+        const fps = logs.match(/([\d.]+) fps/), a = logs.match(/Audio: (\w+)[^\n]*?(\d+) Hz, (mono|stereo|[\w.]+)/), d = logs.match(/Duration: (\d+):(\d+):([\d.]+)/);
+        return { vcodec: v && v[1], w: v ? +v[2] : 0, h: v ? +v[3] : 0, fps: fps ? +fps[1] : 0, acodec: a && a[1], ar: a ? +a[2] : 0, ch: a && a[3], dur: d ? (+d[1]) * 3600 + (+d[2]) * 60 + (+d[3]) : 0 };
+    }
+    async function ffConcatVideos(blobs, note) {
+        const names = blobs.map((_, i) => `cv_in_${i}.mp4`), tmp = [...names];
+        try {
+            const infos = [];
+            for (let i = 0; i < blobs.length; i++) { await ffPut(names[i], blobs[i]); infos.push(await ffProbe(names[i])); }
+            const anyAudio = infos.some(x => x.acodec);
+            if (anyAudio) for (let i = 0; i < names.length; i++) if (!infos[i].acodec) {
+                note(`إضافة مسار صامت للمقطع ${i + 1}`);
+                const o = `cv_sil_${i}.mp4`; await ffExec(buildSilentAudioArgs(names[i], o)); tmp.push(o); names[i] = o; infos[i] = await ffProbe(o);
+            }
+            const f = infos[0];
+            const same = infos.every(x => x.vcodec === f.vcodec && x.w === f.w && x.h === f.h && Math.abs(x.fps - f.fps) < 0.05 && x.acodec === f.acodec && x.ar === f.ar && x.ch === f.ch);
+            const sum = infos.reduce((a, x) => a + (x.dur || 0), 0);
+            if (same) {
+                note('لصق مباشر دون إعادة ترميز');
+                await ffmpeg.writeFile('cv_list.txt', new TextEncoder().encode(names.map(n => `file '${n}'`).join('\n'))); tmp.push('cv_list.txt');
+                await ffExec(buildConcatCopyArgs('cv_list.txt', 'cv_out.mp4')); tmp.push('cv_out.mp4');
+                const oi = await ffProbe('cv_out.mp4');
+                if (!sum || Math.abs((oi.dur || 0) - sum) < 0.6) return { data: await ffGet('cv_out.mp4'), fast: true };
+                note('اختلفت المدة — لصق بإعادة الترميز');
+            } else note('المقاطع غير متطابقة — لصق بإعادة الترميز (أبطأ)');
+            await ffExec(buildConcatReencodeArgs(names, f.w || 720, f.h || 1280, infos.map(x => !!x.acodec), infos.map(x => x.dur || 3), 'cv_out2.mp4')); tmp.push('cv_out2.mp4');
+            return { data: await ffGet('cv_out2.mp4'), fast: false };
+        } finally { ffDel(tmp); }
+    }
+    async function ffConcatAudios(blobs) {
+        const names = blobs.map((_, i) => `ca_in_${i}.bin`), out = 'ca_out.mp3';
+        try { for (let i = 0; i < blobs.length; i++) await ffPut(names[i], blobs[i]); await ffExec(buildAudioConcatArgs(names, out)); return await ffGet(out); }
+        finally { ffDel([...names, out]); }
+    }
+    async function ffMergePair(vBlob, aBlob, o) {
+        const vn = 'mp_v.mp4', an = 'mp_a.bin', on = 'mp_out.mp4';
+        try {
+            await ffPut(vn, vBlob); await ffPut(an, aBlob);
+            const info = await ffProbe(vn);
+            const args = buildMergeAudioArgs({ mix: o.mix, vNew: o.vNew, vOrig: o.vOrig, videoDur: info.dur || o.videoDur, audioDur: o.audioDur, fit: o.fit, hasOrigAudio: !!info.acodec })
+                .map(x => x === '{in}' ? vn : x === '{aud}' ? an : x === '{out}' ? on : x);
+            await ffExec(args); return await ffGet(on);
+        } finally { ffDel([vn, an, on]); }
+    }
+    async function ffCompress(blob) {
+        const i = 'cp_in.mp4', o = 'cp_out.mp4';
+        try { await ffPut(i, blob); await ffExec(buildCompressArgs(i, o)); return await ffGet(o); } finally { ffDel([i, o]); }
+    }
+
+    // ---------- الواجهة ----------
+    async function runMergeSelected(silentAlert = false, params = null) {
+        const fail = msg => { if (!silentAlert) alert(msg); return Promise.reject(new Error(msg)); };
+        const p = params && typeof params === 'object' ? params : {};
+        if (!isEngineReady) return fail('المحرك غير جاهز بعد، انتظر اكتمال تهيئته.');
+        if (isProcessing) return fail('انتظر انتهاء العملية الحالية.');
+        const pick = (spec, kind) => {
+            const pool = poolOf(kind);
+            if (Array.isArray(spec)) { const out = spec.map(id => pool.find(c => c.id === id)); if (out.some(x => !x)) throw new Error('بعض المقاطع المطلوبة غير موجودة في المخزن (ربما حُذفت)'); return out; }
+            const m = typeof spec === 'string' && spec.match(/^last:(\d+)$/); if (m) return pool.slice(-Math.max(0, +m[1]));
+            if (spec === 'none') return [];
+            return poolSel[kind].map(id => pool.find(c => c.id === id)).filter(Boolean);
+        };
+        let V, A;
+        try { V = pick(p.videos, 'video'); A = pick(p.audios, 'audio'); } catch (e) { return fail(e.message); }
+        const dom = id => document.getElementById(id);
+        const mix = (p.mode || dom('mergeAudioMode')?.value) === 'mix';
+        const pairing = p.pairing || dom('mergePairing')?.value || 'scene_by_scene';
+        const fit = p.fit || dom('mergeAudioFit')?.value || 'longest';
+        const pct = (v, d) => Math.max(0, Math.min(300, Number(v ?? d))) / 100;
+        const vNew = pct(p.voiceVolume, dom('mergeVolNew')?.value ?? 100).toFixed(2), vOrig = pct(p.originalVolume, dom('mergeVolOrig')?.value ?? 30).toFixed(2);
+        const doCompress = p.compress !== undefined ? !!p.compress : (dom('mergeCompress')?.checked ?? true);
+        if (!V.length && !A.length) return fail('حدّد مقاطع من «مخزن الوسائط» أولاً (علامة ✓).');
+        if (V.length === 1 && !A.length) return fail('حدّد مقطعين على الأقل للدمج، أو أضف صوتاً.');
+        if (V.length >= 2 && A.length >= 2 && V.length !== A.length && pairing === 'scene_by_scene') return fail(`عدد الأصوات (${A.length}) لا يساوي عدد الفيديوهات (${V.length}). اجعلهما متساويين، أو اختر «دمج الأصوات تباعاً».`);
+        const total = (V.length && A.length && V.length === A.length && V.length > 1 && pairing === 'scene_by_scene') ? V.length + 2 : 3;
+        let stepN = 0;
+        const note = t => { stepN++; progressTask.innerText = `🎬 الدمج: ${t}`; progressBar.style.width = Math.min(95, Math.round(stepN / total * 100)) + '%'; progressPercent.innerText = Math.min(95, Math.round(stepN / total * 100)) + '%'; };
+        isProcessing = true; processStartTime = Date.now(); updateButtonsState(); progressWrapper.style.display = 'block';
+        try {
+            const bv = []; for (const c of V) bv.push(await getClipBlob(c));
+            const ba = []; for (const c of A) ba.push(await getClipBlob(c));
+            const sumV = V.reduce((s, c) => s + (c.duration || 0), 0), sumA = A.reduce((s, c) => s + (c.duration || 0), 0);
+            const opt = { mix, vNew, vOrig, fit };
+            let data, kind = 'video', mime = 'video/mp4', label;
+            if (V.length && !A.length) { note(`لصق ${V.length} فيديوهات`); data = (await ffConcatVideos(bv, note)).data; label = `لصق ${V.length} مشاهد`; }
+            else if (!V.length) { note(`لصق ${A.length} أصوات`); data = await ffConcatAudios(ba); kind = 'audio'; mime = 'audio/mpeg'; label = `دمج ${A.length} أصوات`; }
+            else if (V.length === A.length && V.length > 1 && pairing === 'scene_by_scene') {
+                const parts = [];
+                for (let i = 0; i < V.length; i++) { note(`دمج الصوت ${i + 1} مع المشهد ${i + 1}`); parts.push(new Blob([await ffMergePair(bv[i], ba[i], { ...opt, videoDur: V[i].duration, audioDur: A[i].duration })], { type: 'video/mp4' })); }
+                note('لصق المشاهد'); data = (await ffConcatVideos(parts, note)).data; label = `${V.length} مشاهد بتعليق صوتي`;
+            } else {
+                let vb = bv[0], ab = ba[0];
+                if (V.length > 1) { note(`لصق ${V.length} فيديوهات`); vb = new Blob([(await ffConcatVideos(bv, note)).data], { type: 'video/mp4' }); }
+                if (A.length > 1) { note(`دمج ${A.length} أصوات`); ab = new Blob([await ffConcatAudios(ba)], { type: 'audio/mpeg' }); }
+                note('دمج الصوت مع الفيديو'); data = await ffMergePair(vb, ab, { ...opt, videoDur: sumV, audioDur: sumA }); label = 'فيديو بتعليق صوتي';
+            }
+            if (kind === 'video' && doCompress && data.byteLength > MERGE_SIZE_LIMIT) { note('ضغط الحجم'); data = await ffCompress(new Blob([data], { type: 'video/mp4' })); label += ' (مضغوط)'; }
+            const name = `${kind === 'audio' ? 'audio' : 'final'}_${Date.now().toString(36)}.${kind === 'audio' ? 'mp3' : 'mp4'}`;
+            window.__skipPoolAutoSave = true;
+            const blob = renderOutput(data, mime, name, kind);
+            window.__skipPoolAutoSave = false;
+            const clipId = await addClipToPool(blob, name, kind, label, kind === 'video' ? { hasAudio: A.length > 0 || V.every(c => c.hasAudio) } : {});
+            poolSel.video = []; poolSel.audio = []; renderClipPoolUI();
+            return { blob, filename: name, mediaType: kind, clipId };
+        } finally {
+            window.__skipPoolAutoSave = false;
+            isProcessing = false; updateButtonsState(); progressWrapper.style.display = 'none';
+        }
     }
 
     function runMergeSecondVideo(silentAlert = false) {
@@ -3699,11 +3738,8 @@
         downloadLink.download = filename;
         downloadLink.innerText = `⬇️ تحميل الملف (${filename} - ${formatBytes(blob.size)})`;
 
-        window.__lastPooledClipId = null;
-        if (mediaType === 'video' && document.getElementById('autoSaveClipPool')?.checked && !window.__skipPoolAutoSave) {
-            window.__pendingPoolSavePromise = addClipToPool(blob, filename, mediaType)
-                .then(id => { window.__lastPooledClipId = id; return id; })
-                .catch(() => {});
+        if ((mediaType === 'video' || mediaType === 'audio') && document.getElementById('autoSaveClipPool')?.checked && !window.__skipPoolAutoSave) {
+            window.__pendingPoolSavePromise = addClipToPool(blob, filename, mediaType).catch(() => {});
         }
         return blob;
     }
@@ -3718,26 +3754,10 @@
     // =========================================================================
     // 6.5 مخزن المقاطع المتتالية (OPFS/Memory) + الرسام السريع + Whisper الخفيف
     // =========================================================================
-    // =========================================================================
-    // 6.5 مخزن موحّد (فيديو | صوت) + محرك الدمج الموحّد + الرسام السريع + Whisper
-    // =========================================================================
-    const MAX_CLIP_POOL = 8;      // يحتفظ بآخر 8 مقاطع فيديو
-    const MAX_AUDIO_POOL = 8;     // يحتفظ بآخر 8 مقاطع صوت
-    const POOL_META_KEY = 'am_pool_v1';
+    const MAX_CLIP_POOL = 8; // يحتفظ بـ 6 إلى 8 مقاطع متعاقبة قبل حذف الأقدم
     let mediaClipPool = [];
     let clipSeqCounter = 1;
-    let poolSeq = { video: 1, audio: 1 };
-    let clipSelection = [];       // ترتيب الاختيار (ids) — الأرقام ①②③ منه
-    let MERGE_TMP = [];
     window.currentTranscript = { text: '', chunks: [] };
-
-    const clipTypeOf = c => (c && c.mediaType === 'audio') ? 'audio' : 'video';
-    const clipsOfType = t => mediaClipPool.filter(c => clipTypeOf(c) === t);
-    const clipById = id => mediaClipPool.find(c => c.id === id) || null;
-    const poolCapFor = t => t === 'audio' ? MAX_AUDIO_POOL : MAX_CLIP_POOL;
-    const ORDER_GLYPHS = '①②③④⑤⑥⑦⑧⑨⑩';
-    const orderGlyph = n => ORDER_GLYPHS[n - 1] || `(${n})`;
-    const clipTag = c => c ? `${clipTypeOf(c) === 'audio' ? 'صوت' : 'مشهد'} #${c.seq || 0}` : '';
 
     async function getOpfsDir(subDir) {
         if (!navigator.storage?.getDirectory) return null;
@@ -3763,721 +3783,250 @@
         });
     }
 
-    // ---------- الحفظ على الجهاز: القائمتان تنجوان من تحديث الصفحة ----------
-    function poolMetaSave() {
+    // =====================================================================
+    // مخزن الوسائط: فيديو + صوت (8 لكل نوع) باختيار متعدد وحفظ دائم بعد تحديث الصفحة
+    // =====================================================================
+    let audioClipPool = [];
+    const MAX_AUDIO_POOL = 8;
+    const poolSel = { video: [], audio: [] };   // معرّفات المحدد بترتيب الاختيار
+    let poolTabKind = 'video';
+    const POOL_DIR = { video: 'studio_clip_pool', audio: 'studio_audio_pool' };
+    const poolOf = kind => kind === 'audio' ? audioClipPool : mediaClipPool;
+    const findClip = id => mediaClipPool.find(c => c.id === id) || audioClipPool.find(c => c.id === id);
+
+    function poolsPersist() {
         try {
-            const clips = mediaClipPool.map(c => ({
-                id: c.id, name: c.name, mediaType: clipTypeOf(c), size: c.size,
-                duration: c.duration, width: c.width, height: c.height,
-                opfsName: c.opfsName, seq: c.seq, segments: c.segments || null
-            }));
-            localStorage.setItem(POOL_META_KEY, JSON.stringify({ clips, seq: poolSeq, sel: clipSelection }));
+            const strip = c => { const { blob, ...m } = c; return m; };
+            localStorage.setItem('am_pools_v1', JSON.stringify({ video: mediaClipPool.filter(c => c.opfsName).map(strip), audio: audioClipPool.filter(c => c.opfsName).map(strip), seq: clipSeqCounter }));
         } catch (_) {}
     }
-    function poolMetaLoad() {
+    async function poolsRestore() {
         try {
-            const raw = JSON.parse(localStorage.getItem(POOL_META_KEY) || 'null');
-            if (!raw || !Array.isArray(raw.clips)) return false;
-            mediaClipPool = raw.clips.filter(c => c && c.id && c.opfsName).map(c => ({ ...c, blob: null }));
-            poolSeq = Object.assign({ video: 1, audio: 1 }, raw.seq || {});
-            clipSelection = Array.isArray(raw.sel) ? raw.sel.filter(id => mediaClipPool.some(c => c.id === id)) : [];
-            const nums = mediaClipPool.map(c => Number(String(c.id).replace(/[^0-9]/g, '')) || 0);
-            clipSeqCounter = Math.max(clipSeqCounter, ...nums, 0) + 1;
-            return mediaClipPool.length > 0;
-        } catch (_) { return false; }
-    }
-    async function poolPruneMissing() {
-        const dir = await getOpfsDir('studio_clip_pool');
-        if (!dir) return;
-        const missing = [];
-        for (const c of [...mediaClipPool]) {
-            if (!c.opfsName) { missing.push(c.id); continue; }
-            try { await dir.getFileHandle(c.opfsName); } catch (_) { missing.push(c.id); }
-        }
-        if (!missing.length) return;
-        mediaClipPool = mediaClipPool.filter(c => !missing.includes(c.id));
-        clipSelection = clipSelection.filter(id => !missing.includes(id));
-        renderClipPoolUI(); poolMetaSave();
-        log(`[Pool] حُذف ${missing.length} مقطع لأن ملفه لم يعد موجوداً على الجهاز.`);
+            const d = JSON.parse(localStorage.getItem('am_pools_v1') || 'null'); if (!d) return;
+            for (const kind of ['video', 'audio']) {
+                const dir = await getOpfsDir(POOL_DIR[kind]); if (!dir || poolOf(kind).length) continue;
+                const ok = [];
+                for (const c of (d[kind] || [])) { try { await dir.getFileHandle(c.opfsName); ok.push(c); } catch (_) {} }
+                if (kind === 'audio') audioClipPool = ok; else mediaClipPool = ok;
+            }
+            clipSeqCounter = Math.max(clipSeqCounter, d.seq || 1);
+            renderClipPoolUI();
+        } catch (_) {}
     }
 
-    async function trimPoolType(type, dir) {
-        const list = clipsOfType(type);
-        while (list.length > poolCapFor(type)) {
-            const dropped = list.shift();
-            const i = mediaClipPool.indexOf(dropped);
-            if (i >= 0) mediaClipPool.splice(i, 1);
-            clipSelection = clipSelection.filter(x => x !== dropped.id);
-            if (dropped.opfsName) { const d = dir || await getOpfsDir('studio_clip_pool'); d?.removeEntry(dropped.opfsName).catch(() => {}); }
-        }
-    }
-
-    async function addClipToPool(blob, filename, mediaType = 'video') {
-        const type = (mediaType === 'audio' || String(blob.type || '').startsWith('audio/')) ? 'audio' : 'video';
-        const id = `clip_${clipSeqCounter++}`;
-        const meta = type === 'audio'
-            ? { duration: await getBlobAudioDuration(blob), width: 0, height: 0 }
-            : await probeBlobDurationFast(blob);
+    async function addClipToPool(blob, filename, mediaType = 'video', label = '', extra = {}) {
+        const kind = mediaType === 'audio' ? 'audio' : 'video';
+        const id = `${kind === 'audio' ? 'aud' : 'clip'}_${clipSeqCounter++}`;
+        const meta = kind === 'audio' ? { duration: await getBlobAudioDuration(blob), width: 0, height: 0 } : await probeBlobDurationFast(blob);
         let opfsName = null;
-        const dir = await getOpfsDir('studio_clip_pool');
+        const dir = await getOpfsDir(POOL_DIR[kind]);
         if (dir) {
             try {
-                opfsName = `${id}_${String(filename || 'clip').replace(/[^a-zA-Z0-9._-]/g, '_')}`;
+                opfsName = `${id}_${filename.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
                 const fh = await dir.getFileHandle(opfsName, { create: true });
-                const wr = await fh.createWritable();
-                await wr.write(blob);
-                await wr.close();
+                const wr = await fh.createWritable(); await wr.write(blob); await wr.close();
             } catch (_) { opfsName = null; }
         }
-        const seq = poolSeq[type] || 1;
-        poolSeq[type] = seq + 1;
-        mediaClipPool.push({
-            id, name: filename, mediaType: type, size: blob.size, seq,
-            duration: meta.duration, width: meta.width, height: meta.height,
-            opfsName, blob: opfsName ? null : blob, segments: null
-        });
-        await trimPoolType(type, dir);
-        renderClipPoolUI();
-        poolMetaSave();
+        const pool = poolOf(kind), max = kind === 'audio' ? MAX_AUDIO_POOL : MAX_CLIP_POOL;
+        pool.push({ id, name: filename, mediaType: kind, size: blob.size, duration: meta.duration, width: meta.width, height: meta.height, opfsName, blob: opfsName ? null : blob, label: String(label || '').slice(0, 80), createdAt: Date.now(), ...extra });
+        while (pool.length > max) {
+            const dropped = pool.shift();
+            poolSel[kind] = poolSel[kind].filter(x => x !== dropped.id);
+            if (dropped?.opfsName && dir) dir.removeEntry(dropped.opfsName).catch(() => {});
+        }
+        poolsPersist(); renderClipPoolUI();
         return id;
     }
-
     async function getClipBlob(clip) {
         if (clip.blob) return clip.blob;
         if (clip.opfsName) {
-            const dir = await getOpfsDir('studio_clip_pool');
-            if (dir) {
-                const fh = await dir.getFileHandle(clip.opfsName);
-                return await fh.getFile();
-            }
+            const dir = await getOpfsDir(POOL_DIR[clip.mediaType === 'audio' ? 'audio' : 'video']);
+            if (dir) { const fh = await dir.getFileHandle(clip.opfsName); return await fh.getFile(); }
         }
         throw new Error(`تعذر قراءة المقطع ${clip.id}`);
     }
-
     async function saveCurrentOutputToPool() {
         if (!lastOutputBlob) return alert('لا يوجد ملف ناتج لحفظه.');
-        const type = String(lastOutputBlob.type || '').startsWith('audio/') ? 'audio' : 'video';
-        const fallback = type === 'audio' ? 'clip.m4a' : 'clip.mp4';
-        const id = await addClipToPool(lastOutputBlob, lastOutputName || fallback, type);
+        const kind = String(lastOutputBlob.type).startsWith('audio/') ? 'audio' : 'video';
+        const id = await addClipToPool(lastOutputBlob, lastOutputName || (kind === 'audio' ? 'audio.wav' : 'clip.mp4'), kind);
         log(`[Pool] Saved manually as ${id}`);
     }
-
     async function removeClipFromPool(id) {
-        const idx = mediaClipPool.findIndex(c => c.id === id);
-        if (idx === -1) return;
-        const [removed] = mediaClipPool.splice(idx, 1);
-        clipSelection = clipSelection.filter(x => x !== id);
-        if (removed?.opfsName) {
-            const dir = await getOpfsDir('studio_clip_pool');
-            dir?.removeEntry(removed.opfsName).catch(() => {});
+        for (const kind of ['video', 'audio']) {
+            const pool = poolOf(kind), idx = pool.findIndex(c => c.id === id);
+            if (idx === -1) continue;
+            const [removed] = pool.splice(idx, 1);
+            poolSel[kind] = poolSel[kind].filter(x => x !== id);
+            if (removed?.opfsName) { const dir = await getOpfsDir(POOL_DIR[kind]); dir?.removeEntry(removed.opfsName).catch(() => {}); }
         }
-        renderClipPoolUI(); poolMetaSave();
+        poolsPersist(); renderClipPoolUI();
     }
-
     async function clearClipPool() {
-        const dir = await getOpfsDir('studio_clip_pool');
-        for (const c of mediaClipPool) {
-            if (c.opfsName && dir) dir.removeEntry(c.opfsName).catch(() => {});
-        }
-        mediaClipPool = [];
-        clipSelection = [];
-        renderClipPoolUI(); poolMetaSave();
+        const kind = poolTabKind, dir = await getOpfsDir(POOL_DIR[kind]);
+        for (const c of poolOf(kind)) if (c.opfsName && dir) dir.removeEntry(c.opfsName).catch(() => {});
+        if (kind === 'audio') audioClipPool = []; else mediaClipPool = [];
+        poolSel[kind] = [];
+        poolsPersist(); renderClipPoolUI();
     }
-
     async function loadPoolClipAsInput(id) {
         await window.__pendingPoolSavePromise;
-        const clip = mediaClipPool.find(c => c.id === id);
+        const clip = findClip(id);
         if (!clip) throw new Error(`المقطع ${id} غير موجود في المخزن`);
         const blob = await getClipBlob(clip);
-        const f = new File([blob], clip.name, { type: blob.type || (clipTypeOf(clip) === 'audio' ? 'audio/mpeg' : 'video/mp4') });
-        await handleSelectedFile(f, false);
+        await handleSelectedFile(new File([blob], clip.name, { type: blob.type || (clip.mediaType === 'audio' ? 'audio/wav' : 'video/mp4') }), false);
         log(`[Pool] Loaded ${id} (${clip.name}) as active input.`);
     }
-
-    // ---------- العرض: قائمتان + اختيار متعدد + تشغيل سريع ----------
-    function miniBtn(text, onClick, danger) {
-        const b = document.createElement('button');
-        b.type = 'button';
-        b.textContent = text;
-        b.onclick = onClick;
-        if (danger) b.style.color = '#fca5a5';
-        return b;
+    // معاينة مقطع من المخزن في النافذة السفلية دون تغيير «آخر ناتج»
+    async function previewPoolClip(id) {
+        const clip = findClip(id); if (!clip) return;
+        const blob = await getClipBlob(clip);
+        if (lastPreviewUrl) URL.revokeObjectURL(lastPreviewUrl);
+        lastPreviewUrl = URL.createObjectURL(blob);
+        previewArea.style.display = 'flex'; mediaContainer.innerHTML = '';
+        const el = document.createElement(clip.mediaType === 'audio' ? 'audio' : 'video'); el.controls = true; el.src = lastPreviewUrl; mediaContainer.appendChild(el);
+        sizeCompareBadge.textContent = `${clip.label || clip.name} — ${formatBytes(blob.size)}${clip.duration ? ' — ' + clip.duration.toFixed(1) + 'ث' : ''}`;
+        downloadLink.href = lastPreviewUrl; downloadLink.download = clip.name; downloadLink.innerText = `⬇️ تحميل (${clip.name})`;
+        el.play().catch(() => {});
     }
-
-    function toggleClipSelection(id, on) {
-        clipSelection = clipSelection.filter(x => x !== id);
-        if (on) clipSelection.push(id);
-        renderClipPoolUI(); poolMetaSave();
+    function poolToggle(kind, id) {
+        const sel = poolSel[kind], i = sel.indexOf(id);
+        if (i >= 0) sel.splice(i, 1); else sel.push(id);
+        renderClipPoolUI();
     }
-
-    function toggleSelectAllClips() {
-        if (mediaClipPool.length && clipSelection.length === mediaClipPool.length) clipSelection = [];
-        else clipSelection = mediaClipPool.map(c => c.id);
-        renderClipPoolUI(); poolMetaSave();
+    function poolSelectAll() { poolSel[poolTabKind] = poolOf(poolTabKind).map(c => c.id); renderClipPoolUI(); }
+    function poolClearSel() { poolSel.video = []; poolSel.audio = []; renderClipPoolUI(); }
+    function poolTab(kind) { poolTabKind = kind; renderClipPoolUI(); }
+    const POOL_NUM = ['①', '②', '③', '④', '⑤', '⑥', '⑦', '⑧'];
+    function poolSummaryText() {
+        const v = poolSel.video.length, a = poolSel.audio.length;
+        if (!v && !a) return 'لم يُحدَّد شيء بعد. حدّد مقاطع من «مخزن الوسائط» أعلاه بعلامة ✓ (ترتيب التحديد = ترتيب الدمج).';
+        return `المحدد: ${v} فيديو · ${a} صوت` + (v >= 2 && a >= 2 && v === a ? ' — سيُربط كل صوت بمشهده بالترتيب' : '');
     }
-
-    // الضغط على المقطع يعرضه في النافذة السفلية (سجل النتائج) دون المساس بآخر ناتج
-    async function previewPoolClip(clip) {
-        try {
-            const blob = await getClipBlob(clip);
-            if (lastPreviewUrl) URL.revokeObjectURL(lastPreviewUrl);
-            lastPreviewUrl = URL.createObjectURL(blob);
-            previewArea.style.display = 'flex';
-            mediaContainer.innerHTML = '';
-            const el = document.createElement(clipTypeOf(clip) === 'audio' ? 'audio' : 'video');
-            el.controls = true;
-            el.src = lastPreviewUrl;
-            mediaContainer.appendChild(el);
-            downloadLink.href = lastPreviewUrl;
-            downloadLink.download = clip.name || 'clip';
-            downloadLink.innerText = `⬇️ تحميل الملف (${clip.name || clip.id} - ${formatBytes(blob.size)})`;
-            sizeCompareBadge.innerHTML = `من المخزن: <strong>${clipTag(clip)}</strong> — ${formatBytes(blob.size)}`;
-            previewArea.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-        } catch (e) { alert('تعذّر عرض المقطع: ' + e.message); }
-    }
-
-    async function downloadClip(clip) {
-        try {
-            const blob = await getClipBlob(clip);
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url; a.download = clip.name || 'clip';
-            document.body.appendChild(a); a.click(); a.remove();
-            setTimeout(() => URL.revokeObjectURL(url), 4000);
-        } catch (e) { alert('تعذّر تنزيل المقطع: ' + e.message); }
-    }
-
-    function downloadSelectedClips() {
-        const picked = clipSelection.map(clipById).filter(Boolean);
-        if (!picked.length) return alert('حدّد مقطعاً واحداً على الأقل (✓).');
-        picked.forEach((c, i) => setTimeout(() => downloadClip(c), i * 450));
-    }
-
-    function renameClip(id) {
-        const clip = clipById(id);
-        if (!clip) return;
-        const next = prompt('اسم جديد للمقطع:', clip.name);
-        if (!next || !next.trim()) return;
-        clip.name = next.trim();
-        renderClipPoolUI(); poolMetaSave();
-    }
-
-    function buildSrtFromSegments(segments) {
-        const pad = (n, w = 2) => String(n).padStart(w, '0');
-        const stamp = sec => {
-            sec = Math.max(0, sec);
-            const h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60), s = Math.floor(sec % 60), ms = Math.round((sec - Math.floor(sec)) * 1000);
-            return `${pad(h)}:${pad(m)}:${pad(s)},${pad(ms, 3)}`;
-        };
-        return (segments || []).map((seg, i) =>
-            `${i + 1}\n${stamp(seg.start)} --> ${stamp(seg.start + seg.dur)}\n${String(seg.text || '').trim()}\n`
-        ).join('\n');
-    }
-
-    function downloadClipSrt(id) {
-        const clip = clipById(id);
-        if (!clip || !Array.isArray(clip.segments) || !clip.segments.length) return alert('لا توجد توقيتات محفوظة لهذا الصوت.');
-        const blob = new Blob([buildSrtFromSegments(clip.segments)], { type: 'text/plain;charset=utf-8' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url; a.download = String(clip.name || 'narration').replace(/\.[^.]+$/, '') + '.srt';
-        document.body.appendChild(a); a.click(); a.remove();
-        setTimeout(() => URL.revokeObjectURL(url), 4000);
-    }
-
-    async function updateStorageMeter() {
-        const fill = document.getElementById('storageMeterFill');
-        const txt = document.getElementById('storageMeterText');
-        if (!fill || !txt) return;
-        try {
-            if (!navigator.storage?.estimate) { txt.textContent = '—'; return; }
-            const est = await navigator.storage.estimate();
-            const usage = est.usage || 0, quota = est.quota || 0;
-            fill.style.width = quota ? Math.min(100, (usage / quota) * 100).toFixed(1) + '%' : '0%';
-            txt.dir = 'ltr';
-            txt.textContent = `${formatBytes(usage)} / ${formatBytes(quota)}`;
-        } catch (_) { txt.textContent = '—'; }
-    }
-
-    function renderClipGroup(container, list, type) {
-        container.innerHTML = '';
-        if (!list.length) {
-            const s = document.createElement('span');
-            s.style.cssText = 'font-size:12px; color:var(--text-muted);';
-            s.textContent = type === 'audio'
-                ? 'لا توجد أصوات محفوظة بعد. كل صوت مولَّد أو مرفوع يظهر هنا ليدخل في الدمج.'
-                : 'لا توجد مقاطع فيديو محفوظة بعد. أي فيديو يُنتج هنا سيُحفظ هنا ليقوم الوكيل بلصقه لاحقاً.';
-            container.appendChild(s);
-            return;
-        }
-        list.forEach(c => {
-            const ord = clipSelection.indexOf(c.id) + 1;
-            const card = document.createElement('div');
-            card.className = 'clip-card' + (ord ? ' is-selected' : '');
-
-            const top = document.createElement('div');
-            top.className = 'clip-card-top';
-            const cb = document.createElement('input');
-            cb.type = 'checkbox';
-            cb.checked = ord > 0;
-            cb.onchange = () => toggleClipSelection(c.id, cb.checked);
-            const tag = document.createElement('strong');
-            tag.style.cssText = 'color:#60a5fa; font-size:11.5px;';
-            tag.textContent = `${type === 'audio' ? '🎙️' : '🎬'} #${c.seq || 0}`;
-            top.append(cb, tag);
-            if (ord) {
-                const ob = document.createElement('span');
-                ob.className = 'clip-ord';
-                ob.textContent = orderGlyph(ord);
-                top.appendChild(ob);
-            }
-            const dur = document.createElement('span');
-            dur.style.cssText = 'margin-inline-start:auto; color:#94a3b8; font-size:11px;';
-            dur.textContent = c.duration ? c.duration.toFixed(1) + 'ث' : formatBytes(c.size);
-            top.appendChild(dur);
-            card.appendChild(top);
-
-            const nm = document.createElement('div');
-            nm.className = 'clip-name';
-            nm.title = c.name || '';
-            nm.textContent = c.name || c.id;
-            card.appendChild(nm);
-
-            const meta = document.createElement('div');
-            meta.className = 'clip-meta';
-            meta.textContent = [formatBytes(c.size), c.width ? `${c.width}×${c.height}` : ''].filter(Boolean).join(' · ');
-            card.appendChild(meta);
-
-            const acts = document.createElement('div');
-            acts.className = 'clip-card-actions';
-            const playBtn = miniBtn('▶', () => previewPoolClip(c));
-            playBtn.title = 'تشغيل في النافذة السفلية';
-            const useBtn = miniBtn('استخدام', () => loadPoolClipAsInput(c.id).catch(e => alert(e.message)));
-            useBtn.title = 'تحميله كملف نشط للمعالجة';
-            const dlBtn = miniBtn('⬇️', () => downloadClip(c));
-            dlBtn.title = 'تنزيل';
-            const rnBtn = miniBtn('✏️', () => renameClip(c.id));
-            rnBtn.title = 'إعادة تسمية';
-            const delBtn = miniBtn('🗑️', () => removeClipFromPool(c.id), true);
-            delBtn.title = 'حذف من المخزن';
-            acts.append(playBtn, useBtn, dlBtn, rnBtn, delBtn);
-            card.appendChild(acts);
-
-            if (type === 'audio' && Array.isArray(c.segments) && c.segments.length) {
-                const srtRow = document.createElement('div');
-                srtRow.className = 'clip-card-actions';
-                srtRow.appendChild(miniBtn('⬇️ ترجمة SRT', () => downloadClipSrt(c.id)));
-                card.appendChild(srtRow);
-            }
-
-            container.appendChild(card);
-        });
-    }
-
     function renderClipPoolUI() {
-        const vList = document.getElementById('clipPoolList');
-        const aList = document.getElementById('clipAudioList');
+        const vList = document.getElementById('clipPoolList'), aList = document.getElementById('audioPoolList');
         if (!vList || !aList) return;
-        const vids = clipsOfType('video'), auds = clipsOfType('audio');
-        const badge = document.getElementById('clipPoolCountBadge');
-        if (badge) badge.innerText = `${vids.length} فيديو · ${auds.length} صوت`;
-        const vc = document.getElementById('clipVideoCount');
-        if (vc) { vc.dir = 'ltr'; vc.innerText = `${vids.length} / ${MAX_CLIP_POOL}`; }
-        const ac = document.getElementById('clipAudioCount');
-        if (ac) { ac.dir = 'ltr'; ac.innerText = `${auds.length} / ${MAX_AUDIO_POOL}`; }
-        const allBtn = document.getElementById('poolSelectAllBtn');
-        if (allBtn) allBtn.textContent = (mediaClipPool.length && clipSelection.length === mediaClipPool.length) ? '⬜ إلغاء الكل' : '☑️ تحديد الكل';
-        renderClipGroup(vList, vids, 'video');
-        renderClipGroup(aList, auds, 'audio');
-        updateMergeSelectionSummary();
-        updateStorageMeter();
-    }
-
-    // ---------- الاختيار والدمج الموحّد ----------
-    function selectionSnapshot() {
-        const picked = clipSelection.map(clipById).filter(Boolean);
-        return {
-            picked,
-            videos: picked.filter(c => clipTypeOf(c) === 'video'),
-            audios: picked.filter(c => clipTypeOf(c) === 'audio')
-        };
-    }
-
-    function mergeSelectionPlan(videos, audios) {
-        const v = videos.length, a = audios.length;
-        if (!v && !a) return { mode: 'none', hint: 'حدّد مقاطع من المخزن (✓) ثم اضغط «دمج المحدد».' };
-        if (v >= 1 && a === 0) {
-            return v >= 2
-                ? { mode: 'concat_video', hint: 'لصق الفيديوهات بالترتيب في فيديو واحد (نسخ مباشر بلا إعادة ترميز إن أمكن).' }
-                : { mode: 'none', hint: 'فيديو واحد لا يحتاج دمجاً — أضف فيديو آخر أو صوتاً.' };
-        }
-        if (!v && a >= 1) {
-            return a >= 2
-                ? { mode: 'concat_audio', hint: 'لصق الأصوات تباعاً في ملف صوتي واحد.' }
-                : { mode: 'none', hint: 'صوت واحد لا يحتاج دمجاً — أضف صوتاً آخر أو حدّد فيديو.' };
-        }
-        if (v === 1) return { mode: 'single', hint: a > 1 ? 'لصق الأصوات تباعاً ثم وضعها على الفيديو.' : 'وضع الصوت على الفيديو.' };
-        if (a === 1) return { mode: 'concat_then_single_audio', hint: 'لصق الفيديوهات بالترتيب ثم وضع الصوت الواحد عليها.' };
-        if (a === v) return { mode: 'pair', hint: 'كل صوت مع مشهده بالترتيب ①②③ ثم لصق الكل (الافتراضي).' };
-        return { mode: 'ambiguous', hint: `عدد الأصوات (${a}) لا يساوي عدد الفيديوهات (${v}). حدّد صوتاً واحداً للكل، أو بعدد الفيديوهات بالضبط.` };
-    }
-
-    function updateMergeSelectionSummary() {
-        const sEl = document.getElementById('mergeSelSummary');
-        const hEl = document.getElementById('mergeSelHint');
-        if (!sEl) return;
-        const { videos, audios } = selectionSnapshot();
-        sEl.innerHTML = (videos.length || audios.length)
-            ? `المحدد: <b>${videos.length}</b> فيديو · <b>${audios.length}</b> صوت`
-            : 'المحدد: لا شيء';
-        if (hEl) hEl.textContent = mergeSelectionPlan(videos, audios).hint;
-    }
-
-    function resolveMergeTargets(p) {
-        const vAll = clipsOfType('video'), aAll = clipsOfType('audio');
-        const pick = (arr, n) => n > 0 ? arr.slice(-Math.min(arr.length, Math.round(n))) : [];
-        let vids = [], auds = [];
-        if (Array.isArray(p.videoIds) && p.videoIds.length) vids = p.videoIds.map(clipById).filter(c => c && clipTypeOf(c) === 'video');
-        else if (p.lastVideos > 0) vids = pick(vAll, p.lastVideos);
-        if (Array.isArray(p.audioIds) && p.audioIds.length) auds = p.audioIds.map(clipById).filter(c => c && clipTypeOf(c) === 'audio');
-        else if (p.lastAudios > 0) auds = pick(aAll, p.lastAudios);
-        if (!vids.length && !auds.length) {
-            const snap = selectionSnapshot();
-            vids = snap.videos; auds = snap.audios;
-        }
-        return { vids, auds };
-    }
-
-    // ---------- أدوات FFmpeg للمخزن ----------
-    async function probePoolFile(fname) {
-        customLogCollector = [];
-        try { await ffmpeg.exec(['-i', fname]); } catch (_) {}
-        const txt = (customLogCollector || []).join('\n');
-        customLogCollector = null;
-        const dm = txt.match(/Duration:\s*(\d+):(\d+):(\d+(?:\.\d+)?)/);
-        const duration = dm ? (+dm[1]) * 3600 + (+dm[2]) * 60 + (+dm[3]) : 0;
-        const vLine = (txt.match(/Stream #\d+:\d+[^\n]*Video:[^\n]*/) || [''])[0];
-        const dim = vLine.match(/(\d{2,5})x(\d{2,5})/);
-        const vc = vLine.match(/Video:\s*([a-zA-Z0-9_]+)/);
-        const fp = vLine.match(/(\d+(?:\.\d+)?)\s*fps/);
-        return {
-            duration,
-            hasAudio: /Stream #\d+:\d+[^\n]*Audio:/.test(txt),
-            vcodec: vc ? vc[1] : '',
-            width: dim ? +dim[1] : 0,
-            height: dim ? +dim[2] : 0,
-            fps: fp ? parseFloat(fp[1]) : 0
-        };
-    }
-
-    async function writePoolInputs(clips, tag) {
-        const out = [];
-        for (let i = 0; i < clips.length; i++) {
-            const blob = await getClipBlob(clips[i]);
-            const m = String(clips[i].name || '').match(/\.([a-z0-9]{2,4})$/i);
-            const ext = m ? '.' + m[1].toLowerCase() : (clipTypeOf(clips[i]) === 'audio' ? '.wav' : '.mp4');
-            const fname = `${tag}_${i}${ext}`;
-            await ffmpeg.writeFile(fname, new Uint8Array(await blob.arrayBuffer()));
-            MERGE_TMP.push(fname);
-            out.push({ name: fname, clip: clips[i], info: await probePoolFile(fname) });
-        }
-        return out;
-    }
-
-    async function ensureAudioTrack(item, idx) {
-        if (item.info.hasAudio) return item.name;
-        const out = `sil_${idx}_${Date.now().toString(36)}.mp4`;
-        const dur = Math.max(0.2, item.info.duration || item.clip?.duration || 1);
-        const build = vcodec => ['-f', 'lavfi', '-i', 'anullsrc=channel_layout=stereo:sample_rate=44100', '-i', item.name,
-            '-map', '1:v:0', '-map', '0:a:0', ...vcodec, '-c:a', 'aac', '-ar', '44100', '-ac', '2', '-b:a', '96k',
-            '-t', dur.toFixed(2), '-movflags', '+faststart', out];
-        let code = await ffmpeg.exec(build(['-c:v', 'copy']));
-        if (code !== 0) {
-            try { await ffmpeg.deleteFile(out); } catch (_) {}
-            code = await ffmpeg.exec(build(['-c:v', 'libx264', '-preset', 'veryfast', '-pix_fmt', 'yuv420p']));
-        }
-        if (code !== 0) throw new Error('تعذّر إضافة مسار صوتي صامت لمقطع بلا صوت');
-        MERGE_TMP.push(out);
-        return out;
-    }
-
-    function canStreamConcat(items) {
-        if (items.length < 2) return false;
-        const a = items[0].info;
-        if (!a.vcodec) return false;
-        return items.every(it => it.info.vcodec === a.vcodec
-            && it.info.width === a.width && it.info.height === a.height
-            && Math.abs((it.info.fps || 0) - (a.fps || 0)) < 0.6
-            && it.info.hasAudio === a.hasAudio);
-    }
-
-    async function tryCopyConcat(items, outName) {
-        const listName = `list_${Date.now().toString(36)}.txt`;
-        const body = items.map(it => `file '${it.name}'`).join('\n');
-        await ffmpeg.writeFile(listName, new TextEncoder().encode(body));
-        MERGE_TMP.push(listName);
-        try { await ffmpeg.deleteFile(outName); } catch (_) {}
-        const code = await ffmpeg.exec(['-f', 'concat', '-safe', '0', '-i', listName, '-c', 'copy', '-movflags', '+faststart', outName]);
-        if (code !== 0) return false;
-        MERGE_TMP.push(outName);
-        return true;
-    }
-
-    async function concatReencode(items, outName, aspect) {
-        const first = items[0].info;
-        let W = Math.round((first.width || 720) / 2) * 2;
-        let H = Math.round((first.height || 1280) / 2) * 2;
-        if (aspect === '16:9') { W = 1280; H = 720; }
-        else if (aspect === '9:16') { W = 720; H = 1280; }
-        else if (aspect === '1:1') { W = 720; H = 720; }
-        const anyAudio = items.some(it => it.info.hasAudio);
-        const args = [];
-        items.forEach(it => args.push('-i', it.name));
-        let fc = '', ins = '';
-        items.forEach((it, i) => {
-            fc += `[${i}:v]scale=${W}:${H}:force_original_aspect_ratio=decrease,pad=${W}:${H}:(ow-iw)/2:(oh-ih)/2,setsar=1,fps=30,format=yuv420p[v${i}];`;
-            if (anyAudio) {
-                if (it.info.hasAudio) fc += `[${i}:a]aresample=44100,aformat=sample_fmts=fltp:channel_layouts=stereo[a${i}];`;
-                else fc += `anullsrc=channel_layout=stereo:sample_rate=44100:d=${Math.max(0.5, it.info.duration || 3).toFixed(2)}[a${i}];`;
-                ins += `[v${i}][a${i}]`;
-            } else ins += `[v${i}]`;
-        });
-        fc += `${ins}concat=n=${items.length}:v=1:a=${anyAudio ? 1 : 0}${anyAudio ? '[v][a]' : '[v]'}`;
-        args.push('-filter_complex', fc, '-map', '[v]');
-        if (anyAudio) args.push('-map', '[a]', '-c:a', 'aac', '-ar', '44100', '-ac', '2', '-b:a', '160k');
-        else args.push('-an');
-        args.push('-c:v', 'libx264', '-preset', 'veryfast', '-pix_fmt', 'yuv420p', '-movflags', '+faststart', outName);
-        try { await ffmpeg.deleteFile(outName); } catch (_) {}
-        const code = await ffmpeg.exec(args);
-        if (code !== 0) throw new Error(`فشل اللصق برمز ${code}`);
-        MERGE_TMP.push(outName);
-        return outName;
-    }
-
-    async function concatVideosFast(items, outName, aspect) {
-        const list = items.slice();
-        if (aspect) { await concatReencode(list, outName, aspect); return outName; }
-        const anyAudio = list.some(it => it.info.hasAudio);
-        if (anyAudio) {
-            for (let i = 0; i < list.length; i++) {
-                if (list[i].info.hasAudio) continue;
-                list[i].name = await ensureAudioTrack(list[i], i);
-                list[i].info = { ...list[i].info, hasAudio: true };
+        document.getElementById('clipPoolCountBadge').innerText = `${mediaClipPool.length} / ${MAX_CLIP_POOL}`;
+        document.getElementById('audioPoolCountBadge').innerText = `${audioClipPool.length} / ${MAX_AUDIO_POOL}`;
+        document.getElementById('poolTabVideo').classList.toggle('active', poolTabKind === 'video');
+        document.getElementById('poolTabAudio').classList.toggle('active', poolTabKind === 'audio');
+        vList.style.display = poolTabKind === 'video' ? '' : 'none'; aList.style.display = poolTabKind === 'audio' ? '' : 'none';
+        for (const kind of ['video', 'audio']) {
+            const listEl = kind === 'audio' ? aList : vList, pool = poolOf(kind);
+            listEl.textContent = '';
+            if (!pool.length) {
+                const e = document.createElement('span'); e.style.cssText = 'font-size:12px;color:var(--text-muted);';
+                e.textContent = kind === 'audio' ? 'لا توجد أصوات محفوظة بعد. كل صوت يُولَّد أو يُستخرج يُحفظ هنا تلقائياً.' : 'لا توجد مقاطع محفوظة بعد. أي فيديو يُنتج هنا سيُحفظ هنا تلقائياً.';
+                listEl.appendChild(e); continue;
             }
+            pool.forEach((c, idx) => {
+                const order = poolSel[kind].indexOf(c.id);
+                const card = document.createElement('div'); card.className = 'clip-card' + (order >= 0 ? ' selected' : '');
+                const top = document.createElement('div'); top.style.cssText = 'display:flex;justify-content:space-between;align-items:center;gap:6px;';
+                const lab = document.createElement('label'); lab.style.cssText = 'display:flex;align-items:center;gap:6px;cursor:pointer;color:#60a5fa;font-weight:700;';
+                const cb = document.createElement('input'); cb.type = 'checkbox'; cb.checked = order >= 0; cb.style.width = 'auto'; cb.onchange = () => poolToggle(kind, c.id);
+                const num = document.createElement('span'); num.textContent = order >= 0 ? (POOL_NUM[order] || order + 1) : `#${idx + 1}`;
+                lab.append(cb, num);
+                const dur = document.createElement('span'); dur.style.color = '#94a3b8'; dur.textContent = c.duration ? c.duration.toFixed(1) + 'ث' : formatBytes(c.size);
+                top.append(lab, dur);
+                const nm = document.createElement('div'); nm.style.cssText = 'white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#e2e8f0;'; nm.title = c.label || c.name; nm.textContent = c.label || c.name;
+                const act = document.createElement('div'); act.className = 'clip-card-actions';
+                const mk = (t, fn) => { const b = document.createElement('button'); b.textContent = t; b.onclick = fn; act.appendChild(b); };
+                mk('▶ معاينة', () => previewPoolClip(c.id));
+                if (kind === 'video') mk('استخدام', () => loadPoolClipAsInput(c.id));
+                mk('حذف', () => removeClipFromPool(c.id));
+                card.append(top, nm, act); listEl.appendChild(card);
+            });
         }
-        if (canStreamConcat(list)) {
-            let ok = await tryCopyConcat(list, outName);
-            if (ok) {
-                const outInfo = await probePoolFile(outName);
-                const expected = list.reduce((a, it) => a + (it.info.duration || 0), 0);
-                if (outInfo.duration > 0 && expected > 0 && Math.abs(outInfo.duration - expected) > Math.max(1.5, expected * 0.2)) {
-                    log('[Merge] مدة الناتج غير مطابقة للمتوقع — إعادة ترميز');
-                    ok = false;
-                }
-            }
-            if (ok) { log('[Merge] نسخ مباشر دون إعادة ترميز'); return outName; }
-            log('[Merge] تعذّر النسخ المباشر — إعادة ترميز');
-        }
-        await concatReencode(list, outName, aspect);
-        return outName;
-    }
-
-    async function concatAudios(items, outName) {
-        const args = [];
-        items.forEach(it => args.push('-i', it.name));
-        let fc = '';
-        items.forEach((it, i) => { fc += `[${i}:a]aresample=44100,aformat=sample_fmts=fltp:channel_layouts=stereo[a${i}];`; });
-        fc += items.map((_, i) => `[a${i}]`).join('') + `concat=n=${items.length}:v=0:a=1[a]`;
-        args.push('-filter_complex', fc, '-map', '[a]', '-c:a', 'aac', '-b:a', '160k', '-movflags', '+faststart', outName);
-        try { await ffmpeg.deleteFile(outName); } catch (_) {}
-        const code = await ffmpeg.exec(args);
-        if (code !== 0) throw new Error('تعذّر لصق الأصوات');
-        MERGE_TMP.push(outName);
-        return outName;
-    }
-
-    // يركّب صوتاً على مشهد: استبدال أو مزج مع خفض تلقائي (ducking) + تسوية مستوى التعليق
-    async function buildPairWithAudio(vItem, aItem, opts, tag, outOverride) {
-        const out = outOverride || `${tag}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 5)}.mp4`;
-        const vDur = vItem.info.duration || vItem.clip?.duration || 0;
-        const aDur = aItem.info.duration || aItem.clip?.duration || 0;
-        const extend = aDur > vDur + 0.12;
-        const lvlA = (Math.max(0, Math.min(300, Number(opts.audioLevel ?? 100))) / 100).toFixed(2);
-        const lvlO = (Math.max(0, Math.min(300, Number(opts.origLevel ?? 30))) / 100).toFixed(2);
-        const norm = opts.normalize === false ? '' : 'dynaudnorm=f=150:g=5:p=0.9,';
-        const aChain = `${norm}volume=${lvlA}`;
-        const mix = opts.mode === 'mix' && vItem.info.hasAudio;
-        const base = ['-i', vItem.name, '-i', aItem.name];
-        const enc = ['-c:a', 'aac', '-ar', '44100', '-ac', '2', '-b:a', '160k', '-movflags', '+faststart'];
-        const padV = `[0:v]tpad=stop_mode=clone:stop_duration=${Math.max(0.2, aDur - vDur + 0.2).toFixed(2)},scale=trunc(iw/2)*2:trunc(ih/2)*2,setsar=1,format=yuv420p[v]`;
-        const run = async args => {
-            try { await ffmpeg.deleteFile(out); } catch (_) {}
-            const code = await ffmpeg.exec(args);
-            if (code !== 0) return false;
-            MERGE_TMP.push(out);
-            return true;
-        };
-        const vEncArgs = ['-c:v', 'libx264', '-preset', 'veryfast', '-crf', '22', '-pix_fmt', 'yuv420p'];
-
-        if (!mix) {
-            const fc = extend ? `${padV};[1:a]${aChain}[a]` : `[1:a]${aChain}[a]`;
-            const vArgs = extend ? ['-map', '[v]', '-map', '[a]', ...vEncArgs] : ['-map', '0:v:0', '-map', '[a]', '-c:v', 'copy'];
-            let ok = await run([...base, '-filter_complex', fc, ...vArgs, ...enc, '-shortest', out]);
-            if (!ok && !extend) {
-                const fc2 = `[0:v]scale=trunc(iw/2)*2:trunc(ih/2)*2,setsar=1,format=yuv420p[v];[1:a]${aChain}[a]`;
-                ok = await run([...base, '-filter_complex', fc2, '-map', '[v]', '-map', '[a]', ...vEncArgs, ...enc, '-shortest', out]);
-            }
-            if (!ok) throw new Error('تعذّر تركيب الصوت على المشهد');
-            return out;
-        }
-
-        const fcDuck = `[1:a]${aChain},asplit=2[n1][n2];[0:a]volume=${lvlO}[orig];[orig][n1]sidechaincompress=threshold=0.05:ratio=8:attack=20:release=400[duck];[duck][n2]amix=inputs=2:duration=longest:dropout_transition=0,volume=2[a]`;
-        const fcPlain = `[1:a]${aChain}[nar];[0:a]volume=${lvlO}[orig];[orig][nar]amix=inputs=2:duration=longest:dropout_transition=0,volume=2[a]`;
-        const attempt = async fc => {
-            const full = extend ? `${fc};${padV}` : fc;
-            const vArgs = extend ? ['-map', '[v]', '-map', '[a]', ...vEncArgs] : ['-map', '0:v:0', '-map', '[a]', '-c:v', 'copy'];
-            return await run([...base, '-filter_complex', full, ...vArgs, ...enc, '-shortest', out]);
-        };
-        let ok = await attempt(fcDuck);
-        if (!ok) { log('[Merge] تعذّر الخفض التلقائي — مزج بمستوى ثابت'); ok = await attempt(fcPlain); }
-        if (!ok) throw new Error('تعذّر مزج الصوت مع الفيديو');
-        return out;
-    }
-
-    async function runMergePlan(job) {
-        const { vids, auds, opts, outName, silentAlert } = job;
-        const plan = mergeSelectionPlan(vids, auds);
-        if (plan.mode === 'none' || plan.mode === 'ambiguous') {
-            if (!silentAlert) alert(plan.hint);
-            throw new Error(plan.hint);
-        }
-        if (!isEngineReady || isProcessing) throw new Error('المحرك غير جاهز أو مشغول حالياً.');
-        isProcessing = true;
-        processStartTime = Date.now();
-        updateButtonsState();
-        progressWrapper.style.display = 'block';
-        progressBar.style.width = '0%';
-        progressPercent.innerText = '0%';
-        progressEta.innerText = '';
-        const step = (txt, pct) => {
-            progressTask.innerText = txt;
-            if (pct != null) { progressBar.style.width = Math.round(pct * 100) + '%'; progressPercent.innerText = Math.round(pct * 100) + '%'; }
-        };
-        const isAudioOut = plan.mode === 'concat_audio';
-        const stamp = Date.now().toString(36);
-        try {
-            step('📥 تجهيز المقاطع من المخزن...', 0.05);
-            const vItems = vids.length ? await writePoolInputs(vids, 'mv') : [];
-            const aItems = auds.length ? await writePoolInputs(auds, 'ma') : [];
-            let finalName = outName;
-
-            if (plan.mode === 'concat_video') {
-                step(`🔗 لصق ${vItems.length} فيديو بالترتيب...`, 0.15);
-                finalName = await concatVideosFast(vItems, outName, opts.aspect);
-            } else if (plan.mode === 'pair') {
-                const pairs = [];
-                for (let i = 0; i < vItems.length; i++) {
-                    step(`🎙️ تركيب الصوت ${i + 1}/${vItems.length} على مشهده...`, 0.15 + (0.6 * i / vItems.length));
-                    const name = await buildPairWithAudio(vItems[i], aItems[i], opts, `mp${i}`);
-                    pairs.push({ name, info: await probePoolFile(name) });
-                }
-                step('🔗 لصق المشاهد المركّبة بالترتيب...', 0.8);
-                finalName = await concatVideosFast(pairs, outName, opts.aspect);
-            } else if (plan.mode === 'concat_then_single_audio') {
-                step('🔗 لصق الفيديوهات أولاً...', 0.2);
-                const merged = await concatVideosFast(vItems, `mvcat_${stamp}.mp4`, opts.aspect);
-                const mergedItem = { name: merged, info: await probePoolFile(merged) };
-                step('🎙️ وضع الصوت على الفيديو الملصوق...', 0.75);
-                finalName = await buildPairWithAudio(mergedItem, aItems[0], opts, 'mpfin', outName);
-            } else if (plan.mode === 'single') {
-                let aName = aItems[0].name;
-                if (aItems.length > 1) {
-                    step(`🔗 لصق ${aItems.length} أصوات تباعاً...`, 0.3);
-                    aName = await concatAudios(aItems, `macat_${stamp}.m4a`);
-                }
-                step('🎙️ تركيب الصوت على الفيديو...', 0.7);
-                finalName = await buildPairWithAudio(vItems[0], { name: aName, info: await probePoolFile(aName) }, opts, 'mpsng', outName);
-            } else if (plan.mode === 'concat_audio') {
-                step(`🔗 لصق ${aItems.length} أصوات تباعاً...`, 0.3);
-                finalName = await concatAudios(aItems, outName);
-            }
-
-            step('💾 إنهاء الملف...', 0.95);
-            const data = await ffmpeg.readFile(finalName);
-            const type = isAudioOut ? 'audio' : 'video';
-            const mime = isAudioOut ? 'audio/mp4' : 'video/mp4';
-            const saveToPool = opts.saveResult !== false;
-            const prevSkip = window.__skipPoolAutoSave;
-            window.__skipPoolAutoSave = !saveToPool;
-            let blob;
-            try { blob = renderOutput(data, mime, finalName, type); }
-            finally { window.__skipPoolAutoSave = prevSkip; }
-            let clipId = null;
-            if (saveToPool) {
-                if (type === 'audio') clipId = await addClipToPool(blob, finalName, 'audio');
-                else { await window.__pendingPoolSavePromise; clipId = window.__lastPooledClipId || null; }
-            }
-            log(`[Merge] ${plan.mode} → ${finalName}`);
-            return { blob, filename: finalName, mediaType: type, clipId, mode: plan.mode };
-        } finally {
-            for (const f of MERGE_TMP) { try { await ffmpeg.deleteFile(f); } catch (_) {} }
-            MERGE_TMP = [];
-            customLogCollector = null;
-            isProcessing = false;
-            progressWrapper.style.display = 'none';
-            updateButtonsState();
-            updateStorageMeter();
-        }
-    }
-
-    async function mergeSelectedClips(params = null, silentAlert = false) {
-        const p = params && typeof params === 'object' ? params : {};
-        const setVal = (id, v) => { const el = document.getElementById(id); if (el && v !== undefined && v !== null) el.value = v; };
-        setVal('mergeSelMode', p.mode);
-        setVal('mergeSelAudioLevel', p.audioLevel);
-        setVal('mergeSelOrigLevel', p.originalLevel);
-        if (p.normalize !== undefined) { const cb = document.getElementById('mergeSelNormalize'); if (cb) cb.checked = Boolean(p.normalize); }
-        const num = (id, d) => { const el = document.getElementById(id); const v = Number(el ? el.value : d); return isFinite(v) ? v : d; };
-        const opts = {
-            mode: (document.getElementById('mergeSelMode')?.value || 'replace') === 'mix' ? 'mix' : 'replace',
-            audioLevel: Math.max(0, Math.min(300, num('mergeSelAudioLevel', 100))),
-            origLevel: Math.max(0, Math.min(300, num('mergeSelOrigLevel', 30))),
-            normalize: document.getElementById('mergeSelNormalize') ? document.getElementById('mergeSelNormalize').checked : true,
-            aspect: p.aspect || null,
-            saveResult: true
-        };
-        const { vids, auds } = resolveMergeTargets(p);
-        const plan = mergeSelectionPlan(vids, auds);
-        const wantsAudioOnly = plan.mode === 'concat_audio';
-        const outName = (p.output && /\.(mp4|m4a|mov|webm)$/i.test(String(p.output)))
-            ? String(p.output)
-            : (wantsAudioOnly ? `audio_montage_${Date.now().toString(36)}.m4a` : `final_montage_${Date.now().toString(36)}.mp4`);
-        if (!isEngineReady || isProcessing) {
-            const m = 'المحرك غير جاهز أو مشغول حالياً.';
-            if (!silentAlert) alert(m);
-            throw new Error(m);
-        }
-        return await runMergePlan({ vids, auds, opts, outName, silentAlert });
+        const sum = poolSummaryText();
+        for (const id of ['poolSelSummary', 'mergeSelSummary']) { const e = document.getElementById(id); if (e) e.textContent = sum; }
     }
 
     async function concatPoolClips(clipIds = 'all', outName = 'final_montage.mp4', targetAspect = null) {
         await window.__pendingPoolSavePromise;
-        const targets = (clipIds === 'all' || !Array.isArray(clipIds))
-            ? [...clipsOfType('video')]
-            : clipIds.map(clipById).filter(c => c && clipTypeOf(c) === 'video');
-        if (targets.length < 2) throw new Error('يجب وجود مقطعين على الأقل في المخزن للّصق.');
-        return await runMergePlan({
-            vids: targets, auds: [],
-            opts: { mode: 'replace', audioLevel: 100, origLevel: 30, normalize: true, aspect: targetAspect, saveResult: false },
-            outName, silentAlert: true
-        });
-    }
+        if (!isEngineReady || isProcessing) throw new Error('المحرك غير جاهز أو مشغول حالياً.');
+        const targets = clipIds === 'all' || !Array.isArray(clipIds)
+            ? [...mediaClipPool]
+            : clipIds.map(id => mediaClipPool.find(c => c.id === id)).filter(Boolean);
 
-    (function initClipPoolFromStorage() {
-        if (poolMetaLoad()) { renderClipPoolUI(); poolPruneMissing(); }
-        else renderClipPoolUI();
-        updateStorageMeter();
-    })();
+        if (targets.length < 2) {
+            throw new Error('يجب وجود مقطعين على الأقل في المخزن للّصق.');
+        }
+
+        isProcessing = true;
+        processStartTime = Date.now();
+        updateButtonsState();
+        progressWrapper.style.display = 'block';
+        progressTask.innerText = `جاري لصق ${targets.length} مقاطع من المخزن...`;
+
+        const writtenFiles = [];
+        try {
+            let W = targets[0].width || 720;
+            let H = targets[0].height || 1280;
+            if (targetAspect === '16:9') { W = 1280; H = 720; }
+            else if (targetAspect === '9:16') { W = 720; H = 1280; }
+            else if (targetAspect === '1:1') { W = 720; H = 720; }
+            W = Math.round(W / 2) * 2; H = Math.round(H / 2) * 2;
+
+            const clipHasAudio = [];
+            for (let i = 0; i < targets.length; i++) {
+                const blob = await getClipBlob(targets[i]);
+                const fname = `pool_in_${i}.mp4`;
+                await ffmpeg.writeFile(fname, new Uint8Array(await blob.arrayBuffer()));
+                writtenFiles.push(fname);
+
+                customLogCollector = [];
+                try { await ffmpeg.exec(['-i', fname]); } catch (_) {}
+                const probeLogs = (customLogCollector || []).join('\n');
+                customLogCollector = null;
+                clipHasAudio.push(/Stream #\d+:\d+.*Audio:/.test(probeLogs));
+            }
+
+            const anyAudio = clipHasAudio.some(Boolean);
+            const args = [];
+            writtenFiles.forEach(f => args.push('-i', f));
+
+            let fc = '';
+            let concatIn = '';
+            for (let i = 0; i < targets.length; i++) {
+                fc += `[${i}:v]scale=${W}:${H}:force_original_aspect_ratio=decrease,pad=${W}:${H}:(ow-iw)/2:(oh-ih)/2,setsar=1,fps=30,format=yuv420p[v${i}];`;
+                if (anyAudio) {
+                    if (clipHasAudio[i]) {
+                        fc += `[${i}:a]aresample=44100,aformat=sample_fmts=fltp:channel_layouts=stereo[a${i}];`;
+                    } else {
+                        const dur = Math.max(0.5, targets[i].duration || 3);
+                        fc += `anullsrc=channel_layout=stereo:sample_rate=44100:d=${dur.toFixed(2)}[a${i}];`;
+                    }
+                    concatIn += `[v${i}][a${i}]`;
+                } else {
+                    concatIn += `[v${i}]`;
+                }
+            }
+            fc += `${concatIn}concat=n=${targets.length}:v=1:a=${anyAudio ? 1 : 0}${anyAudio ? '[v][a]' : '[v]'}`;
+
+            args.push('-filter_complex', fc, '-map', '[v]');
+            if (anyAudio) args.push('-map', '[a]', '-c:a', 'aac', '-b:a', '128k');
+            else args.push('-an');
+            args.push('-c:v', 'libx264', '-preset', 'veryfast', '-pix_fmt', 'yuv420p', '-movflags', '+faststart', outName);
+
+            const exitCode = await ffmpeg.exec(args);
+            if (exitCode !== 0) throw new Error(`فشل اللصق برمز ${exitCode}`);
+
+            const outData = await ffmpeg.readFile(outName);
+            writtenFiles.push(outName);
+            window.__skipPoolAutoSave = true;
+            const blob = renderOutput(outData, 'video/mp4', outName, 'video');
+            window.__skipPoolAutoSave = false;
+            log(`[Pool] Merged ${targets.length} clips -> ${outName}`);
+            return { blob, filename: outName, mediaType: 'video' };
+        } finally {
+            window.__skipPoolAutoSave = false;
+            customLogCollector = null;
+            for (const f of writtenFiles) { try { await ffmpeg.deleteFile(f); } catch (_) {} }
+            isProcessing = false;
+            progressWrapper.style.display = 'none';
+            updateButtonsState();
+        }
+    }
 
     // --- إدارة خطوط OPFS + محول HTML -> SVG foreignObject -> ImageBitmap ---
     let opfsFontDataUriMap = {};
@@ -5262,32 +4811,46 @@
         if (pcm.length > wavLen) pcm = pcm.subarray(0, wavLen);
         return pcm;
     }
-    async function ttsSynthAll(text, steps, speed, spk, timeline) {
-        const chunks = ttsChunkText(text.trim(), 300);
-        const gap = new Float32Array(Math.floor(0.3 * ttsState.sr)), parts = [];
-        let cursor = 0;
-        for (let i = 0; i < chunks.length; i++) {
-            if (ttsState.abort) throw new Error('أُوقف يدوياً');
-            const pcm = await ttsSynthChunk(chunks[i], steps, speed, spk, (s, n) => ttsProgress((i + s / n) / chunks.length, `🗣️ جاري توليد الصوت — مقطع ${i + 1}/${chunks.length}`));
-            if (parts.length) { parts.push(gap); cursor += gap.length; }
-            // توقيت تقريبي لكل جملة داخل المقطع (توزيع مدة المقطع على عدد الأحرف)
-            if (timeline) {
-                const sents = ttsSplitSentences(chunks[i]).filter(Boolean);
-                const totalCh = sents.reduce((a, s) => a + s.length, 0) || 1;
-                let acc = cursor;
-                for (const s of sents) {
-                    const len = pcm.length * (s.length / totalCh);
-                    timeline.push({ text: s.replace(/<\/?ar>/g, '').trim(), start: acc / ttsState.sr, dur: Math.max(0.2, len / ttsState.sr) });
-                    acc += len;
-                }
+    function ttsPushSay(items, s) { for (const piece of ttsChunkText(s, 300)) items.push({ type: 'say', text: piece }); }
+    // يحوّل النص إلى جمل ووقفات: [وقفة] أو [وقفة 1.2] وفقرة جديدة (سطر فارغ) = وقفة
+    function ttsParseScript(text) {
+        const items = [], markRe = /\[\s*(?:وقفة|pause)\s*([\d.]+)?\s*(?:ث|s)?\s*\]/gi;
+        String(text).replace(/\r/g, '').split(/\n\s*\n+/).forEach((para, pi) => {
+            if (pi > 0) items.push({ type: 'pause', sec: 0.6 });
+            const parts = []; let last = 0, m;
+            markRe.lastIndex = 0;
+            while ((m = markRe.exec(para)) !== null) { parts.push({ say: para.slice(last, m.index) }); parts.push({ pause: Math.min(3, parseFloat(m[1]) || 0.7) }); last = m.index + m[0].length; }
+            parts.push({ say: para.slice(last) });
+            for (const part of parts) {
+                if (part.pause !== undefined) { items.push({ type: 'pause', sec: part.pause }); continue; }
+                const t = (part.say || '').replace(/\s+/g, ' ').trim(); if (!t) continue;
+                let buf = '';
+                for (const s of ttsSplitSentences(t)) { buf = buf ? buf + ' ' + s : s; if (buf.length >= 14) { ttsPushSay(items, buf); buf = ''; } }
+                if (buf) ttsPushSay(items, buf);
             }
-            parts.push(pcm);
-            cursor += pcm.length;
+        });
+        return items;
+    }
+    async function ttsSynthAll(text, steps, speed, spk) {
+        const items = ttsParseScript(text), sr = ttsState.sr, GAP = 0.28;
+        const says = items.filter(i => i.type === 'say').length;
+        if (!says) throw new Error('النص لا يحتوي كلاماً قابلاً للنطق');
+        const parts = [], segments = []; let t = 0, k = 0;
+        for (let idx = 0; idx < items.length; idx++) {
+            if (ttsState.abort) throw new Error('أُوقف يدوياً');
+            const it = items[idx];
+            if (it.type === 'pause') { parts.push(new Float32Array(Math.floor(it.sec * sr))); t += it.sec; continue; }
+            k++;
+            const pcm = await ttsSynthChunk(it.text, steps, speed, spk, (s, n) => ttsProgress((k - 1 + s / n) / says, `🗣️ جاري توليد الصوت — جملة ${k}/${says}`));
+            segments.push({ text: it.text, start: +t.toFixed(2), end: +(t + pcm.length / sr).toFixed(2) });
+            parts.push(pcm); t += pcm.length / sr;
+            const next = items[idx + 1];
+            if (next && next.type === 'say') { parts.push(new Float32Array(Math.floor(GAP * sr))); t += GAP; }
         }
         let n = 0; for (const p of parts) n += p.length;
         const all = new Float32Array(n); let o = 0;
         for (const p of parts) { all.set(p, o); o += p.length; }
-        return all;
+        return { pcm: all, segments };
     }
     function ttsPcmToWav(pcm, rate) {
         const n = pcm.length, buf = new ArrayBuffer(44 + n * 2), v = new DataView(buf);
@@ -5319,21 +4882,20 @@
         try {
             await ttsEnsureReady();
             ttsProgress(0, '🗣️ جاري توليد الصوت...');
-            const timeline = [];
-            const pcm = await ttsSynthAll(text, steps, speed, Math.min(spk, (ttsState.dims ? ttsState.dims[0] : 1) - 1), timeline);
+            const synth = await ttsSynthAll(text, steps, speed, Math.min(spk, (ttsState.dims ? ttsState.dims[0] : 1) - 1));
+            const pcm = synth.pcm;
             const wav = ttsPcmToWav(pcm, ttsState.sr);
             const name = `voice_${Date.now()}.wav`;
+            window.__skipPoolAutoSave = true;
             renderOutput(new Uint8Array(await wav.arrayBuffer()), 'audio/wav', name, 'audio');
-            const duration = pcm.length / ttsState.sr;
-            const clipId = await addClipToPool(wav, name, 'audio');
-            const clip = clipById(clipId);
-            if (clip) { clip.segments = timeline; poolMetaSave(); }
-            const note = document.getElementById('ttsNote');
-            if (note) note.innerText = `تم توليد صوت مدته ${duration.toFixed(1)} ثانية ✅ — حُفظ في مخزن الأصوات (${clipTag(clip) || clipId})`;
+            window.__skipPoolAutoSave = false;
+            const clipId = await addClipToPool(wav, name, 'audio', text.replace(/\[[^\]]*\]/g, '').slice(0, 60), { text: text.slice(0, 2000), voice: spk, segments: synth.segments });
+            const note = document.getElementById('ttsNote'); if (note) note.innerText = `تم توليد صوت مدته ${(pcm.length / ttsState.sr).toFixed(1)} ثانية ✅ — حُفظ في مخزن الأصوات (${clipId}). للدمج مع فيديو: تبويب «الصوت والدمج».`;
             ttsScheduleRelease();
-            lastTtsResult = { blob: wav, duration, name, segments: timeline, clipId };
-            return { blob: wav, filename: name, mediaType: 'audio', duration, clipId };
+            lastTtsResult = { blob: wav, duration: pcm.length / ttsState.sr, name };
+            return { blob: wav, filename: name, mediaType: 'audio', clipId, duration: pcm.length / ttsState.sr, segments: synth.segments };
         } catch (e) {
+            window.__skipPoolAutoSave = false;
             log('[TTS] ' + e.message);
             const friendly = /أُوقف/.test(e.message) ? e.message : 'تعذّر توليد الصوت: ' + (/HTTP|Failed to fetch|تعذّر تحميل/.test(e.message) ? 'تحقق من الاتصال ثم أعد المحاولة' : e.message);
             if (!silentAlert) alert(friendly);
@@ -5651,7 +5213,7 @@
             const output = new mb.Output({ format: new mb.Mp4OutputFormat(), target: new mb.BufferTarget() });
             const videoSource = new mb.CanvasSource(renderCanvas, {
                 codec: 'avc',
-                bitrate: mb.QUALITY_HIGH || 4_000_000
+                bitrate: window.__exportBitrate || mb.QUALITY_HIGH || 4_000_000
             });
             output.addVideoTrack(videoSource, { frameRate: fps });
             await output.start();
@@ -5682,9 +5244,8 @@
             const bytes = new Uint8Array(output.target.buffer);
             const outName = `painter_${Date.now().toString().slice(-5)}.mp4`;
             const blob = renderOutput(bytes, 'video/mp4', outName, 'video');
-            await window.__pendingPoolSavePromise;
             log(`[FastPainter] Exported ${outName} (${formatBytes(blob.size)}) in ${((Date.now() - processStartTime) / 1000).toFixed(1)}s`);
-            return { blob, filename: outName, mediaType: 'video', clipId: window.__lastPooledClipId || null };
+            return { blob, filename: outName, mediaType: 'video' };
         } catch (err) {
             if (!silentAlert) alert(`خطأ الرسام السريع: ${err.message}`);
             throw err;
@@ -6496,32 +6057,30 @@
             hasSecondVideoFile: Boolean(document.getElementById('secondVideoFile').files?.length)
         } : { status: 'لا يوجد ملف مرفوع حالياً (يمكن تشغيل painter_render أو cs_motion_banner بدون ملف)' };
 
-        const poolItem = (c, idx) => ({
+        const audioPoolSummary = audioClipPool.map((c, idx) => ({ order: idx + 1, id: c.id, durationSec: Number((c.duration || 0).toFixed(2)), label: c.label || c.name }));
+        const poolSummary = mediaClipPool.map((c, idx) => ({
             order: idx + 1,
-            tag: clipTag(c),
             id: c.id,
             name: c.name,
             durationSec: Number((c.duration || 0).toFixed(2)),
-            res: c.width ? `${c.width}x${c.height}` : 'صوت'
-        });
-        const poolVideos = clipsOfType('video').map(poolItem);
-        const poolAudios = clipsOfType('audio').map(poolItem);
+            res: `${c.width}x${c.height}`
+        }));
 
         return `أنت وكيل مونتاج وإخراج ذكي تتحكم بالكامل في استوديو متعدد المحركات:
 1) FFmpeg.wasm (قص، تدوير، دمج، صوت، فلاتر)
 2) الرسام السريع (HTML-to-Canvas + WebCodecs + Mediabunny لتصميم مشاهد عربية وتصدير MP4 صاروخي)
-3) مخزن موحّد بقائمتين (فيديو | صوت) يحتفظ تلقائياً بآخر 8 من كل نوع؛ كل ناتج يدخل المخزن ويأخذ معرّفاً (مثل «صوت #3» أو «مشهد #5»)
+3) مخزن المقاطع المتتالية (clipPool - يحتفظ تلقائياً بآخر 8 مقاطع فيديو تنتجها لتلصقها في النهاية)
 4) Whisper الخفيف عبر Transformers.js (استخراج الكلام بالتوقيتات الزمنية)
 5) Squoosh / ImageMagick / OpenCV.js / Tesseract OCR للصور
 
 مواصفات الملف النشط حالياً:
 ${JSON.stringify(mediaSummary, null, 2)}
 
-جرد المخزن — فيديو (مرتّب من الأقدم إلى الأحدث):
-${JSON.stringify(poolVideos, null, 2)}
+مخزن المقاطع المحفوظة حالياً (clipPool):
+${JSON.stringify(poolSummary, null, 2)}
 
-جرد المخزن — صوت (مرتّب من الأقدم إلى الأحدث):
-${JSON.stringify(poolAudios, null, 2)}
+مخزن الأصوات المحفوظة حالياً (audioPool):
+${JSON.stringify(audioPoolSummary, null, 2)}
 
 التفريغ الصوتي الحالي بالتوقيتات (Whisper):
 ${JSON.stringify(window.currentTranscript?.chunks?.slice(0, 60) || [], null, 2)}
@@ -6543,14 +6102,9 @@ ${catalog}
     //    **يُمنع إرفاق الكود جاهزاً في حقل "html" أو كتلة \`\`\`html**؛ أرسل "brief" فقط والمبرمج ينشئ الكود حرفياً.
     // ج) التحكم بالملف النشط أثناء المونتاج متعدد اللقطات:
     //    { "type": "restore_original" }  |  { "type": "select_pool_clip", "clip_id": "clip_1" }  |  { "type": "use_last_output" }
-    // د) **الدمج الموحّد (الأساسي)**: زر واحد يجمع ما تحدّده من المخزن:
-    //    { "type": "merge_selected", "params": { "lastVideos": 3, "lastAudios": 3, "join": "pair", "mode": "replace", "audioLevel": 100, "originalLevel": 30, "normalize": true, "output": "final.mp4" } }
-    //    - lastVideos / lastAudios: عدد آخر مقاطع من كل نوع تدخل الدمج (0 = لا شيء). أو حدّد المعرّفات صريحة: videoIds: ["clip_3"], audioIds: ["clip_4"].
-    //    - join: "pair" = كل صوت مع مشهده بالترتيب ثم لصق الكل | "concat" = لصق الفيديوهات فقط | "single_audio" = لصق الفيديوهات ثم صوت واحد عليها | "audio" = لصق الأصوات فقط.
-    //    - الناتج يدخل المخزن ويأخذ معرّفاً جديداً يمكنك استخدامه في خطوة تالية (مثل الضغط).
-    // هـ) لصق مجموعة مقاطع فيديو من المخزن بالترتيب في فيديو MP4 نهائي:
+    // د) لصق مجموعة مقاطع من المخزن بالترتيب في فيديو MP4 نهائي:
     //    { "type": "concat_pool", "clip_ids": ["clip_1", "clip_2"], "output": "final_montage.mp4" }  — يُمنع "all" نهائياً
-    // و) أي زر من الأزرار مع params أو أوامر ffmpeg_raw / magick_raw:
+    // هـ) أي زر من الأزرار مع params أو أوامر ffmpeg_raw / magick_raw:
     //    { "type": "button", "action_id": "trim", "params": { "start": 2.5, "duration": 6, "accurate": true } }
     //    { "type": "ffmpeg_raw", "label": "قص لقطة", "args": ["-ss", "2", "-i", "{in}", "-t", "5", "-c:v", "libx264", "-preset", "veryfast", "-pix_fmt", "yuv420p", "-c:a", "aac", "{out}"], "output": "cut1.mp4" }
   ],
@@ -6561,19 +6115,12 @@ ${catalog}
 - **ميثاق الإبداع (لا قوالب إطلاقاً)**: لا يوجد في هذا الاستوديو أي مشهد جاهز أو نمط بصري افتراضي. صمّم كل مونتاج من الصفر استناداً إلى معنى التفريغ الصوتي وإيقاعه ومشاعره وطول مقاطعه: غيّر التكوين والألوان والأحجام والخطوط والحركة وتوزيع الطبقات بما يخدم المحتوى. يُمنع إعادة إنتاج «بطاقة زجاجية كحلية + وسم أحمر + عنوان أزرق فاتح»، ويُمنع أي تحية أو افتتاحية عامة أو أي نص لم يقله المتحدث حرفياً.
 - **لا قيم ثابتة في الأمثلة**: كل قيمة تظهر في أمثلة الصيغة أدناه هي لتوضيح الشكل فقط وليست توصية؛ لا تنسخها أبداً. إن لم يحدّد المستخدم أبعاداً أو مدة أو نمط حركة، استنتجها من توقيتات المقاطع.
 - **مصدر الجمال الوحيد = كود المبرمج**: الخلفية والألوان والحركة والزخرفة كلها تُكتب داخل HTML/CSS الذي ينشئه المبرمج (بما فيه CSS keyframes). محرك الرسم لا يضيف أي تدرّج أو بطاقة أو نص من نفسه، ولا يملك أي «بديل» مرسوم عند فشل الرسم.
-- كل فيديو ينتج من FFmpeg أو الرسام السريع يُحفظ تلقائياً في قائمة الفيديو، وكل صوت مولَّد يُحفظ في قائمة الصوت (آخر 8 من كل نوع). الدمج النهائي يتم بزر واحد merge_selected يعتمد على الاختيار/الترتيب، لا على "all". عند concat_pool حدّد clip_ids الخاصة بهذا الطلب صراحةً.
+- كل فيديو ينتج من FFmpeg أو الرسام السريع يُحفظ تلقائياً في clipPool (حتى 8 مقاطع متتالية). عند concat_pool حدّد clip_ids الخاصة بهذا الطلب صراحةً ولا تستخدم "all" إن كان المخزن يحوي مقاطع من طلبات سابقة.
 - **يُمنع إدماج أي قالب أو نص افتراضي أو مشهد قديم في الفيديو**: لا تستخدم cs_motion_banner/cs_video_overlay بنصوصها الافتراضية، ولا تُعد تدوير مقطع محفوظ من طلب سابق. المشهد الوحيد المسموح بدمجه هو ما أنشأه المبرمج لهذا الطلب حرفياً.
-- **الصوت أولاً (المسار المعتمد لأي فيديو بتعليق صوتي — نفّذه بهذا الترتيب دون سؤال المستخدم)**:
-  ١) **اكتب النص بنفسك ثم ولّده**: action_id: tts_generate بنص تعليق احترافي تكتبه أنت (فصحى مبسطة، جمل قصيرة، إيقاع منطوق لا مكتوب) يناسب موضوع الفيديو ومدة مشاهده؛ النص هو أساس الفيديو لا العكس. المعاملات: text (النص كاملاً)، voice (رقم الصوت من 0)، speed (من 0.9 إلى 1.1 للتعليق الهادئ)، steps (من 6 إلى 8 لجودة أعلى).
-  ٢) **تحكّم في الصمت والنطق بالترميز النصي**: المحرك يقسم النص إلى مقاطع عند النقطة (.) وعلامة الاستفهام (؟) وعلامة الحذف (…) ويضع صمتاً نحو 0.3 ثانية بعد كل مقطع، والسطر الفارغ (سطران) يفصل فقرتين بصمت أطول. استخدم ذلك لضبط الإيقاع: جملة واحدة لكل فكرة، ونقطة في نهاية كل جملة، وسطر فارغ بين الفقرات، و(…) عند الوقفة الدرامية. اكتب أواخر الكلمات بحركاتها عند احتمال اللبس لتحسين النطق، وامتنع عن الرموز التعبيرية والأقواس والشرطات الطويلة لأنها تُحذف من النطق.
-  ٣) **فرّغ الصوت للحصول على الترقيم والتوقيت**: بعد التوليد شغّل whisper_transcribe مع follow_up_after_tools: true لتحصل على توقيتات كل جملة بالثواني وتستخدمها في وصف المشهد.
-  ٤) **اكتب للرسام وصفاً احترافياً بالتوقيتات**: painter_scene واحد لكل مشهد مع params.duration = "auto" (المدة تتبع طول التعليق تلقائياً: طول الصوت + نحو ثانية — لا تختلق رقماً)، وbrief احترافي: تصميم حديث وتفاصيل تفاعلية (طبقات، حركة، انتقالات)، وموضع ظهور كل جملة من التفريغ بثوانيها، والألوان والتكوين والخطوط.
-  ٥) **دمج واحد في النهاية**: merge_selected مع join: "pair" ليجمع كل صوت مع مشهده بالترتيب ①②③ ثم يلصق الكل في فيديو واحد — بلا تدخل من المستخدم.
-  ٦) **الضغط تلقائياً**: إن كان الناتج كبيراً استدعِ الزر compress على آخر ناتج، ثم أبلغ المستخدم بالحجم النهائي.
-- **تعليق صوتي على فيديو مرفوع من المستخدم**: tts_generate أولاً، ثم merge_audio_video مع params: source = "last_tts" و mode = "replace" و fit = "longest" (لأن الفيديو المرفوع ليس في المخزن). وإن كان الفيديو ناتجاً في المخزن فاستخدم merge_selected.\n- **التنفيذ الآلي**: خطتك تُنفَّذ آلياً بالترتيب وبانتظار انتهاء كل خطوة (حتى تجهيز أداة الصوت وتحميلها)، فلا تضف خطوات انتظار. ممنوع تماماً استدعاء أدوات أو وظائف (tool calls)؛ اكتب JSON فقط، واختر action_id من الأزرار المعرّفة والإجراءات الخاصة المذكورة أعلاه حصراً، وكل إجراء خارجها يُرفض.\n- **لغة الرد**: لا تذكر أبداً في ردك أي اسم تقني أو معرّف أداة (مثل FFmpeg وWebCodecs وMediabunny وWhisper وSquoosh وOpenCV وpainter_scene وffmpeg_raw وconcat_pool وأسماء النماذج)؛ تحدث بعبارات بسيطة (المحرك، الرسام، المونتاج، الصوت، الصور) واكتب label عربياً ودوداً لكل خطوة.\n- **الاستقلالية (أهم قاعدة)**: إن طلب المستخدم إنشاء فيديو أو عدة فيديوهات ولا يوجد ملف مرفوع، فلا تسأل ولا تطلب تأكيداً أو توضيحاً؛ اجعل mode = \"execute\" وابدأ فوراً بإجراءات painter_scene. أنت من يختار الفكرة البصرية والمدة والمقاس والإيقاع. لا تسأل إلا إذا لم يُذكر أي موضوع إطلاقاً.
+- **توليد الصوت**: لتحويل نص إلى كلام استخدم الإجراء action_id: tts_generate مع params: text (النص العربي كاملاً بعلامات ترقيم واضحة)، voice (رقم الصوت ويبدأ من 0)، speed (من 0.8 إلى 1.2). الناتج ملف صوتي WAV، ولكل مقطع صوتي مستقل إجراء مستقل.\n- **فيديو بتعليق صوتي (الأسلوب المفضل)**: لكل فيديو يطلبه المستخدم أرسل إجراءً واحداً {\"type\": \"voiceover_video\", \"label\": \"اسم الفيديو\", \"params\": {\"topic\": \"الموضوع\", \"details\": \"توجيهات اختيارية\", \"aspect\": \"9:16\", \"duration_hint\": 20}}. ينفّذ البرنامج تلقائياً وبانتظار كل مرحلة: كتابة نص احترافي مشكّل للنطق ← توليد الصوت (بعد انتظار تحميل الأداة) ← كتابة وصف إخراج فني بتوقيتات الجمل ← رسم المشهد بمدة الصوت ← دمج الصوت وضغط الحجم. لا تكتب أنت النص ولا الوصف ولا تضف خطوات صوت أو دمج؛ اكتب الموضوع والتفاصيل فقط. N فيديوهات = N إجراءات voiceover_video. وإن طلب المستخدم فيديو واحداً طويلاً من عدة مشاهد فأضف في النهاية merge_selected (videos: \"last:N\", audios: \"none\") للصق النتائج.\n- **دمج الوسائط**: كل فيديو يُنتَج يُحفظ في clipPool (معرّف clip_N) وكل صوت يُولَّد يُحفظ في audioPool (معرّف aud_N)، وتعيد كل مرحلة معرّف ما أنتجته. للدمج استخدم الإجراء action_id: merge_selected مع params: videos (مصفوفة معرّفات أو \"last:N\") وaudios (مصفوفة معرّفات أو \"last:N\") وpairing (\"scene_by_scene\" يربط كل صوت بمشهده بالترتيب، أو \"sequence\" لدمج الأصوات تباعاً) وmode (\"replace\" أو \"mix\") وfit (\"longest\") وcompress (true). مثال لثلاثة مشاهد بتعليق: لكل مشهد tts_generate ثم painter_scene، وفي النهاية merge_selected واحد مع videos: \"last:3\" وaudios: \"last:3\". للصق المقاطع فقط استخدم merge_selected مع audios: \"none\". لا تستخدم use_last_output للدمج.\n- **التنفيذ الآلي**: خطتك تُنفَّذ آلياً بالترتيب وبانتظار انتهاء كل خطوة (حتى تجهيز أداة الصوت وتحميلها)، فلا تضف خطوات انتظار. ممنوع تماماً استدعاء أدوات أو وظائف (tool calls)؛ اكتب JSON فقط، واختر action_id من الأزرار المعرّفة والإجراءات الخاصة المذكورة أعلاه حصراً، وكل إجراء خارجها يُرفض.\n- **لغة الرد**: لا تذكر أبداً في ردك أي اسم تقني أو معرّف أداة (مثل FFmpeg وWebCodecs وMediabunny وWhisper وSquoosh وOpenCV وpainter_scene وffmpeg_raw وconcat_pool وأسماء النماذج)؛ تحدث بعبارات بسيطة (المحرك، الرسام، المونتاج، الصوت، الصور) واكتب label عربياً ودوداً لكل خطوة.\n- **الاستقلالية (أهم قاعدة)**: إن طلب المستخدم إنشاء فيديو أو عدة فيديوهات ولا يوجد ملف مرفوع، فلا تسأل ولا تطلب تأكيداً أو توضيحاً؛ اجعل mode = \"execute\" وابدأ فوراً بإجراءات painter_scene. أنت من يختار الفكرة البصرية والمدة والمقاس والإيقاع. لا تسأل إلا إذا لم يُذكر أي موضوع إطلاقاً.
 - **عدة فيديوهات**: كل فيديو يطلبه المستخدم = إجراء painter_scene مستقل في نفس الخطة وبترتيب طلبه. لا تدمجها ولا تستدعِ concat_pool إلا إذا طلب المستخدم ملفاً واحداً. لكل إجراء: \"label\" باسم الموضوع، و\"params\" الخاصة به (aspect وduration)، و\"brief\" كامل ومكتفٍ بذاته لا يعتمد على بقية الإجراءات (تُكتب أكواد المشاهد بالتوازي مع التصدير).
 - **فيديو شرحي**: اكتب أنت في الـ brief النص التعليمي الكامل بالعربية الفصحى المبسطة (عنوان + من 3 إلى 6 جمل أو نقاط قصيرة ودقيقة)، لأن الرسام لا يضيف نصاً من عنده. وزّع ظهور كل نقطة على المدة بثوانٍ صريحة، وحدّد فكرة بصرية تناسب الموضوع.
-- **المدة**: الافتراضي 20 ثانية. قدّر المدة بما يتسع لقراءة النص (نحو كلمتين في الثانية مع 3 ثوانٍ للمقدمة والخاتمة) بحد أدنى 8 وأقصى 45 ثانية، وضعها في params.duration لكل فيديو — وإن وُجد تعليق صوتي مولَّد فاجعل القيمة "auto" دائماً بدل رقم ثابت.
+- **المدة**: الافتراضي 20 ثانية. قدّر المدة بما يتسع لقراءة النص (نحو كلمتين في الثانية مع 3 ثوانٍ للمقدمة والخاتمة) بحد أدنى 8 وأقصى 45 ثانية، وضعها في params.duration لكل فيديو.
 - الرسام السريع (painter_scene/painter_render) هو المسار المفضل والمسرع لتصدير مشاهد HTML بالعربية عبر WebCodecs. إذا تعثرت خطوة الرسام، أعِد محاولة الرسام بمعاملات مصححة؛ لا تستبدله بأداة cs_motion_banner لأنها تعتمد على captureStream + FFmpeg وهي بطيئة جداً على الهواتف.
 - بروتوكول الوكيلين (نفس النموذج بدورين): أنت "منسق الاستوديو" — عند الحاجة لمشهد HTML جديد **لا تكتب الكود بنفسك ولا ترسله أبداً**؛ أرسل أمراً للرسام عبر painter_scene مع حقل "brief" يحتوي وصفاً دقيقاً وحرفياً للنصوص والألوان والأحجام والترتيب والنمط. سيكتب "الرسام" الكود من الصفر في نافذة الأكواد، ثم يُسلَّم كما هو. أي كود جاهز ترسله يُتجاهل.
 - ابنِ "brief" على "التفريغ الصوتي الحالي بالتوقيتات" أعلاه: ضمّن ترقيم المقاطع وتوقيتاتها ([بداية - نهاية]) ونصّ كل مقطع، وحدّد موضع كل طبقة فوق فيديو المستخدم. المنسق يجمع الطبقات ويركّبها، والمبرمج ينشئ التأثيرات والمشاهد عبر HTML فقط حرفياً وفق هذا الوصف؛ تُرفق التوقيتات بأمر الرسام تلقائياً. لا تصف مشهداً عاماً ولا تكرّر قالباً سابقاً.
@@ -6586,7 +6133,7 @@ ${catalog}
     }
 
     // بطاقة تقدّم واحدة تتحدّث في مكانها بدل رسالة لكل خطوة
-    const FRIENDLY_STEPS = { painter_scene: 'تصميم مشهد', painter_render: 'تصدير الفيديو', concat_pool: 'دمج المقاطع', merge_selected: 'دمج الصوت مع المشاهد', ffmpeg_raw: 'معالجة الفيديو', whisper_transcribe: 'تفريغ الصوت' };
+    const FRIENDLY_STEPS = { painter_scene: 'تصميم مشهد', painter_render: 'تصدير الفيديو', concat_pool: 'دمج المقاطع', ffmpeg_raw: 'معالجة الفيديو', whisper_transcribe: 'تفريغ الصوت' };
     function friendlyStepName(a, i) {
         const id = a && (a.action_id || a.type);
         const b = id ? document.querySelector(`[data-action="${id}"]`) : null;
@@ -6883,23 +6430,11 @@ ${catalog}
             }
             return await concatPoolClips(act.clip_ids, act.output || 'final_montage.mp4', act.aspect || null);
         }
-        if (act.type === 'merge_selected' || act.action_id === 'merge_selected') {
-            highlightAndSwitchToButton('merge_selected');
-            return await mergeSelectedClips(act.params || {}, true);
-        }
         if (act.type === 'painter_scene' || act.action_id === 'painter_render') {
             highlightAndSwitchToButton('painter_render');
             const p = act.params || {};
             if (p.aspect) document.getElementById('ptAspect').value = p.aspect;
-            // المدة "auto": تتبع طول التعليق الصوتي المولَّد (طول الصوت + نحو ثانية)
-            let durVal = p.duration;
-            if (durVal === 'auto' || p.autoDuration) {
-                const nd = Number(lastTtsResult?.duration || 0);
-                durVal = nd > 0 ? Math.min(120, Math.max(1, Math.round(nd + 1))) : null;
-                if (durVal) appendAiMessage('system', `⏱️ مدة المشهد تتبع التعليق الصوتي: ${durVal} ثانية (طول الصوت ${nd.toFixed(1)}ث + نحو ثانية).`);
-                else appendAiMessage('system', '⚠️ لا يوجد صوت مولَّد لضبط مدة المشهد تلقائياً — استُخدمت المدة المكتوبة في الحقل.');
-            }
-            if (durVal && durVal !== 'auto') document.getElementById('ptDuration').value = durVal;
+            if (p.duration) document.getElementById('ptDuration').value = p.duration;
             if (p.fps) document.getElementById('ptFps').value = p.fps;
             if (p.bgMode) document.getElementById('ptBgMode').value = p.bgMode;
             if (p.animMode) document.getElementById('ptAnimMode').value = p.animMode;
@@ -6962,8 +6497,8 @@ ${catalog}
             case 'radio_fx': return await runAudioFilter('highpass=f=300,lowpass=f=3200,acompressor', 'تأثير راديو', 'radio', true);
             case 'audio_visualizer': return await runAudioVisualizer(true);
             case 'watermark': return await runWatermark(true);
-            case 'merge_audio_video': return await runMergeAudioVideo(true, act.params);
-            case 'replace_audio': return await runMergeAudioVideo(true, { mode: 'replace', source: 'file' });
+            case 'merge_selected': return await runMergeSelected(true, act.params);
+            case 'merge_audio_video': case 'replace_audio': return await runMergeSelected(true, { videos: 'last:1', audios: 'last:1', ...(act.params || {}) });
             case 'merge_video': return await runMergeSecondVideo(true);
             case 'cs_motion_banner': throw new Error('cs_motion_banner قالب جاهز معطّل للوكيل — استخدم painter_scene.');
             case 'cs_kenburns': return await runCanvasKenBurns(true);
@@ -6996,7 +6531,7 @@ ${catalog}
     // النافذة والدردشة مجرد عارضين؛ التنفيذ مستقل عنهما ويستمر أثناء التنقل بين الأقسام.
     // =====================================================================
     const JOB_KEY = 'am_jobs_v1';
-    const JOB_ETA = { painter_scene: 60, painter_render: 45, tts_generate: 35, tts_prepare: 50, merge_audio_video: 25, merge_selected: 40, concat_pool: 45, whisper_transcribe: 40, default: 20 };
+    const JOB_ETA = { vo_script: 8, vo_tts: 40, vo_brief: 10, vo_scene: 60, vo_merge: 30, painter_scene: 60, painter_render: 45, tts_generate: 35, tts_prepare: 50, merge_selected: 40, merge_audio_video: 30, concat_pool: 45, whisper_transcribe: 40, default: 20 };
     let activeJob = null, jobTickTimer = null, jobWake = null, jobLastSave = 0;
 
     const jobEtaFor = kind => { try { const s = JSON.parse(localStorage.getItem('am_job_stats') || '{}'); return s[kind] || JOB_ETA[kind] || JOB_ETA.default; } catch (_) { return JOB_ETA[kind] || JOB_ETA.default; } };
@@ -7009,7 +6544,7 @@ ${catalog}
     const jobKindOf = act => (!act.type || act.type === 'button') ? String(act.action_id || act.key || 'default') : String(act.type);
     const jobFmtTime = sec => { sec = Math.max(0, Math.round(sec)); return sec >= 60 ? `${Math.floor(sec / 60)}د ${sec % 60}ث` : `${sec}ث`; };
 
-    const JOB_LABELS = { tts_generate: 'توليد الصوت', tts_prepare: 'تجهيز أداة الصوت', merge_audio_video: 'دمج الصوت مع الفيديو', merge_selected: 'دمج الصوت مع المشاهد', concat_pool: 'دمج المقاطع', use_last_output: 'تجهيز الملف الحالي', select_pool_clip: 'تجهيز الملف الحالي', restore_original: 'العودة للملف الأصلي', whisper_transcribe: 'تفريغ الصوت إلى نص', painter_render: 'تصدير الفيديو', ffmpeg_raw: 'معالجة الفيديو' };
+    const JOB_LABELS = { tts_generate: 'توليد الصوت', tts_prepare: 'تجهيز أداة الصوت', merge_selected: 'دمج الصوت والفيديو', merge_audio_video: 'دمج الصوت والفيديو', concat_pool: 'دمج المقاطع', use_last_output: 'تجهيز الملف الحالي', select_pool_clip: 'تجهيز الملف الحالي', restore_original: 'العودة للملف الأصلي', whisper_transcribe: 'تفريغ الصوت إلى نص', painter_render: 'تصدير الفيديو', ffmpeg_raw: 'معالجة الفيديو' };
     function jobStageLabel(act, paintN) {
         const kind = jobKindOf(act);
         if (kind === 'painter_scene') return `رسم المشهد ${paintN}` + (act.label ? ' — ' + String(act.label).slice(0, 40) : '');
@@ -7027,9 +6562,11 @@ ${catalog}
     function jobAppendActions(job, actions) {
         const finIdx = job.stages.findIndex(s => s.kind === 'finish');
         const fin = finIdx >= 0 ? job.stages.splice(finIdx, 1)[0] : { kind: 'finish', label: 'الانتهاء', status: 'pending', progress: 0, eta: 0 };
-        let paintN = job.stages.filter(s => s.kind === 'painter_scene').length;
+        let paintN = job.stages.filter(s => s.kind === 'painter_scene' || s.kind === 'vo_scene').length;
+        const multi = actions.filter(a => jobKindOf(a) === 'voiceover_video').length + Object.keys(job.vars || {}).length > 1;
         for (const act of actions) {
             const kind = jobKindOf(act);
+            if (kind === 'voiceover_video') { paintN++; jobExpandVoiceover(job, act, multi, paintN); continue; }
             if (kind === 'tts_generate' && !job.ttsPrepared && !ttsState.ready) {
                 job.stages.push({ kind: 'tts_prepare', label: JOB_LABELS.tts_prepare, status: 'pending', progress: 0, eta: jobEtaFor('tts_prepare'), attempts: 0 });
                 job.ttsPrepared = true;
@@ -7198,7 +6735,7 @@ ${catalog}
     }
 
     // ---------- التحقق من الخطة: الوكيل يستعمل القائمة المسموحة فقط ----------
-    const JOB_SPECIAL_TYPES = ['painter_scene', 'painter_render', 'concat_pool', 'select_pool_clip', 'restore_original', 'use_last_output', 'ffmpeg_raw', 'magick_raw'];
+    const JOB_SPECIAL_TYPES = ['voiceover_video', 'merge_audio_video', 'painter_scene', 'painter_render', 'concat_pool', 'select_pool_clip', 'restore_original', 'use_last_output', 'ffmpeg_raw', 'magick_raw'];
     const selOpts = id => [...document.querySelectorAll(`#${id} option`)].map(o => o.value);
     function allowedActionIds() {
         const ids = new Set(JOB_SPECIAL_TYPES); ids.add('replace_audio');
@@ -7214,31 +6751,25 @@ ${catalog}
             if (act.type === 'tool_call' || act.type === 'function' || act.function) { issues.push({ index: i, msg: 'لا يُسمح باستدعاء الأدوات؛ استخدم الإجراءات من القائمة المحددة فقط' }); return; }
             const kind = jobKindOf(act);
             if (!allowed.has(kind)) { issues.push({ index: i, msg: `الإجراء «${kind}» غير موجود في القائمة المسموحة` }); return; }
+            if (kind === 'voiceover_video' && String((act.params || {}).topic || act.label || '').trim().length < 3) { issues.push({ index: i, msg: 'الفيديو بتعليق صوتي بلا موضوع (params.topic)' }); return; }
             if (kind === 'painter_scene' && !String(act.brief || act.html_brief || '').trim()) { issues.push({ index: i, msg: 'مشهد الرسام بلا وصف (brief)' }); return; }
             if (kind === 'concat_pool' && !(Array.isArray(act.clip_ids) && act.clip_ids.length)) { issues.push({ index: i, msg: 'دمج المقاطع بلا clip_ids' }); return; }
             if (kind === 'tts_generate' && !String((act.params || {}).text || '').trim()) { issues.push({ index: i, msg: 'توليد الصوت بلا نص (params.text)' }); return; }
             const p = act.params && typeof act.params === 'object' && !Array.isArray(act.params) ? act.params : {};
-            for (const k of Object.keys(p)) {
-                if (p[k] === null || typeof p[k] !== 'object') continue;
-                if (Array.isArray(p[k]) && ['videoIds', 'audioIds', 'clip_ids'].includes(k)) continue;
-                delete p[k]; notes.push(`حُذف معامل معقّد «${k}» في ${kind}`);
-            }
+            for (const k of Object.keys(p)) if (p[k] !== null && typeof p[k] === 'object' && !Array.isArray(p[k])) { delete p[k]; notes.push(`حُذف معامل معقّد «${k}» في ${kind}`); }
             if (kind === 'painter_scene' || kind === 'painter_render') {
-                if (typeof p.duration === 'string' && /^(auto|narration)$/i.test(p.duration.trim())) p.duration = 'auto';
-                else if (p.duration !== undefined) p.duration = clamp(p.duration, 1, 120, 20);
+                if (p.duration !== undefined) p.duration = clamp(p.duration, 1, 120, 20);
                 if (p.fps !== undefined) p.fps = clamp(p.fps, 10, 60, 30);
                 if (p.aspect !== undefined && !selOpts('ptAspect').includes(String(p.aspect))) { notes.push(`قياس غير معروف «${p.aspect}» → الافتراضي`); delete p.aspect; }
                 if (p.bgMode !== undefined && !selOpts('ptBgMode').includes(String(p.bgMode))) { delete p.bgMode; }
             }
-            if (kind === 'merge_selected') {
-                if (p.lastVideos !== undefined) p.lastVideos = Math.round(clamp(p.lastVideos, 0, MAX_CLIP_POOL, 0));
-                if (p.lastAudios !== undefined) p.lastAudios = Math.round(clamp(p.lastAudios, 0, MAX_AUDIO_POOL, 0));
-                if (p.join !== undefined && !['pair', 'concat', 'single_audio', 'audio'].includes(p.join)) delete p.join;
-                if (p.mode !== undefined && !['replace', 'mix'].includes(p.mode)) delete p.mode;
-                if (p.output !== undefined && !/\.(mp4|m4a|mov|webm)$/i.test(String(p.output))) delete p.output;
-                if (p.aspect !== undefined && !['16:9', '9:16', '1:1'].includes(String(p.aspect))) delete p.aspect;
-                for (const k of ['audioLevel', 'originalLevel']) if (p[k] !== undefined) p[k] = clamp(p[k], 0, 300, 100);
-                for (const k of ['videoIds', 'audioIds']) if (Array.isArray(p[k])) p[k] = p[k].map(String).slice(0, 8);
+            if (kind === 'voiceover_video') {
+                if (p.duration_hint !== undefined) p.duration_hint = clamp(p.duration_hint, 8, 60, 20);
+                if (p.voice !== undefined) p.voice = Math.round(clamp(p.voice, 0, 9, 0));
+                if (p.speed !== undefined) p.speed = clamp(p.speed, 0.5, 1.6, 1);
+                if (p.aspect !== undefined && !selOpts('ptAspect').includes(String(p.aspect))) delete p.aspect;
+                p.topic = String(p.topic || act.label || '').slice(0, 300);
+                if (p.details !== undefined) p.details = String(p.details).slice(0, 1500);
             }
             if (kind === 'tts_generate') {
                 if (p.speed !== undefined) p.speed = clamp(p.speed, 0.5, 1.6, 1);
@@ -7246,29 +6777,18 @@ ${catalog}
                 if (p.voice !== undefined) p.voice = Math.round(clamp(p.voice, 0, 9, 0));
                 p.text = String(p.text).slice(0, 4000);
             }
-            if (kind === 'merge_audio_video') {
-                if (p.source !== undefined && !['last_tts', 'file', 'last_audio'].includes(p.source)) delete p.source;
+            if (kind === 'merge_selected' || kind === 'merge_audio_video') {
+                const okSpec = v => Array.isArray(v) ? v.length <= 12 && v.every(x => typeof x === 'string') : (typeof v === 'string' && (/^last:\d+$/.test(v) || v === 'selected' || v === 'none'));
+                for (const k of ['videos', 'audios']) if (p[k] !== undefined && !okSpec(p[k])) { delete p[k]; notes.push(`حُذف معامل غير صالح «${k}»`); }
+                if (p.pairing !== undefined && !['scene_by_scene', 'sequence'].includes(p.pairing)) delete p.pairing;
                 if (p.mode !== undefined && !['replace', 'mix'].includes(p.mode)) delete p.mode;
                 if (p.fit !== undefined && !['video', 'audio', 'longest'].includes(p.fit)) delete p.fit;
                 for (const k of ['voiceVolume', 'originalVolume']) if (p[k] !== undefined) p[k] = clamp(p[k], 0, 300, 100);
+                if (p.compress !== undefined) p.compress = !!p.compress;
             }
             if (act.params !== undefined || Object.keys(p).length) act.params = p;
             out.push(act);
         });
-        // تبعيات: كل خطوة تحتاج ملفاً حاضراً بعد خطوة منتجة ⇒ أدرج «تجهيز الملف الحالي» تلقائياً
-        const VIDEO_PRODUCERS = ['painter_scene', 'painter_render', 'concat_pool', 'merge_selected', 'select_pool_clip'];
-        const NEEDS_FILE = k => !['painter_scene', 'painter_render', 'concat_pool', 'merge_selected', 'tts_generate', 'select_pool_clip', 'restore_original', 'use_last_output'].includes(k);
-        for (let m = 0; m < out.length; m++) {
-            const kindM = jobKindOf(out[m]);
-            if (!NEEDS_FILE(kindM)) continue;
-            // دمج الصوت مع الفيديو يحتاج فيديو حاضراً (لا يكفي صوت مولَّد) ⇒ منتجات الفيديو فقط
-            const producers = kindM === 'merge_audio_video' ? VIDEO_PRODUCERS : VIDEO_PRODUCERS.concat(['tts_generate']);
-            let p = -1;
-            for (let k = m - 1; k >= 0; k--) { if (producers.includes(jobKindOf(out[k]))) { p = k; break; } }
-            if (p < 0) continue;
-            const between = out.slice(p + 1, m).map(jobKindOf);
-            if (!between.includes('use_last_output') && !between.includes('select_pool_clip')) { out.splice(p + 1, 0, { type: 'use_last_output' }); notes.push('أُضيفت خطوة «تجهيز الملف الحالي» قبل الخطوة التالية'); m++; }
-        }
         return { actions: out, issues, notes };
     }
     async function repairAgentPlan(rawActions, issues) {
@@ -7284,6 +6804,103 @@ ${catalog}
     }
 
     // ---------- التنفيذ ----------
+    // =====================================================================
+    // مسار «فيديو بتعليق صوتي» الآلي: كتابة النص ← توليد الصوت ← وصف إخراج بتوقيتات ← رسم المشهد ← دمج وضغط
+    // =====================================================================
+    const VO_ETA = { vo_script: 8, vo_tts: 40, vo_brief: 10, vo_scene: 60, vo_merge: 30 };
+    async function voLLM(system, user, temperature = 0.8) {
+        let last;
+        for (let a = 1; a <= 3; a++) {
+            try { return await callProviderChat([{ role: 'system', content: system }, { role: 'user', content: user }], { temperature }); }
+            catch (e) { last = e; if (!jobIsRetriable(e) || a === 3) throw e; await jobSleep(1500 * a); }
+        }
+        throw last;
+    }
+    const VO_SCRIPT_SYSTEM = (words, dur) => `أنت كاتب نصوص إذاعية محترف للفيديوهات القصيرة بالعربية الفصحى المبسطة. نصك سيُقرأ بصوت اصطناعي (TTS)، فاكتبه ليُنطق بسلاسة ووضوح.
+- الطول المستهدف: نحو ${words} كلمة (المدة المتوقعة للنطق ≈ ${dur} ثانية).
+- البناء: جملة افتتاحية جاذبة وقصيرة، ثم من 3 إلى 5 أفكار متسلسلة محددة ومفيدة، ثم جملة ختامية قوية.
+- جمل قصيرة (من 6 إلى 14 كلمة)، كل جملة تنتهي بنقطة أو علامة استفهام أو تعجب. استعمل الفاصلة العربية (،) للوقفات الخفيفة داخل الجملة.
+- للوقفات الأطول ضع [وقفة 0.6] أو [وقفة 1] بين الأفكار فقط (لا تُكثر منها).
+- التشكيل: شكّل الكلمات الملتبسة النطق وأواخر الكلمات التي يتغير معناها أو نطقها بالإعراب، تشكيلاً جزئياً وصحيحاً عند الحاجة فقط، ولا تشكّل كل شيء.
+- اكتب الأرقام بالحروف، وأسماء المصطلحات الأجنبية كما تُنطق بالعربية.
+- ممنوع الرموز والروابط والإيموجي وعلامات التنسيق وأي نص غير منطوق.
+أعد JSON صالحاً فقط: {"title":"عنوان قصير","narration":"النص الكامل"}`;
+    const VO_BRIEF_SYSTEM = `أنت مخرج فني ومصمم حركة محترف. اكتب وصفاً تنفيذياً (brief) لمصمّم مشاهد برمجي ليبني مشهد فيديو عربياً حديثاً ومتزامناً بدقة مع التعليق الصوتي.
+يجب أن يتضمن الوصف:
+1) فكرة بصرية موحّدة ومبتكرة تناسب الموضوع: المفهوم، لوحة ألوان بأكواد، الخطوط وتسلسلها الهرمي، لغة الأشكال، وخلفية حيّة. استعمل أساليب حديثة (زجاج شفاف، تدرجات شبكية، طباعة حركية، عدادات وأرقام متحركة، مؤشرات تقدّم، عمق وحركة بارالاكس) ولا تكرر تصميم البطاقة الداكنة التقليدي.
+2) جدولاً زمنياً دقيقاً مرتبطاً بالتوقيتات المعطاة: لكل مقطع زمني [من–إلى بالثواني] ما يظهر وكيف يتحرك (دخول، إبراز، خروج) والنص المكتوب على الشاشة حرفياً (عبارات قصيرة مستخلصة من التعليق لا النص الكامل) مع توقيت بداية الحركة بالثانية.
+3) تفاصيل حركية تفاعلية حديثة: حركة هادئة مستمرة في الخلفية، دخول متتابع للعناصر، إبراز الكلمات المفتاحية في لحظة نطقها، انتقالات ناعمة بين الأفكار.
+4) كل النصوص المعروضة بالعربية الفصحى السليمة. التزم بالمدة والقياس المعطيين، وأبقِ كل عبارة ظاهرة ثلاث ثوانٍ على الأقل.
+أعد الوصف نصاً عادياً فقط، بلا JSON وبلا مقدمات أو شرح خارجي.`;
+
+    function jobExpandVoiceover(job, act, multi, paintCounter) {
+        job.vars = job.vars || {};
+        const id = 'm' + (Object.keys(job.vars).length + 1), p = act.params || {};
+        const topic = String(p.topic || act.label || '').slice(0, 300);
+        job.vars[id] = { topic, details: String(p.details || '').slice(0, 1500), aspect: p.aspect || '', durationHint: p.duration_hint || 20, voice: p.voice ?? 0, speed: p.speed ?? 1, label: String(act.label || topic).slice(0, 60) };
+        const sfx = multi ? ' — ' + (job.vars[id].label || topic).slice(0, 24) : '';
+        const mk = (kind, label) => job.stages.push({ kind, macro: id, label: label + sfx, status: 'pending', progress: 0, eta: jobEtaFor(kind), attempts: 0 });
+        mk('vo_script', 'كتابة نص التعليق');
+        if (!job.ttsPrepared && !ttsState.ready) { job.stages.push({ kind: 'tts_prepare', label: JOB_LABELS.tts_prepare, status: 'pending', progress: 0, eta: jobEtaFor('tts_prepare'), attempts: 0 }); job.ttsPrepared = true; }
+        mk('vo_tts', 'توليد الصوت');
+        mk('vo_brief', 'تصميم وصف المشهد بالتوقيتات');
+        job.stages.push({ kind: 'vo_scene', macro: id, label: `رسم المشهد ${paintCounter}` + sfx, status: 'pending', progress: 0, eta: jobEtaFor('vo_scene'), attempts: 0 });
+        mk('vo_merge', 'دمج الصوت وضغط الفيديو');
+    }
+    async function runVoStage(job, st) {
+        const v = job.vars[st.macro]; if (!v) throw new Error('بيانات المهمة ناقصة');
+        const dom = id => document.getElementById(id);
+        if (st.kind === 'vo_script') {
+            const dur = Math.max(8, Math.min(60, Number(v.durationHint) || 20)), words = Math.round(dur * 2.0);
+            const raw = await voLLM(VO_SCRIPT_SYSTEM(words, dur), `الموضوع: ${v.topic}\n${v.details ? 'تفاصيل وتوجيهات: ' + v.details + '\n' : ''}اكتب نص التعليق الآن.`);
+            const j = extractJsonFromText(raw);
+            let narration = String((j && j.narration) || '').trim() || String(raw).replace(/```[\s\S]*?```/g, '').trim();
+            if (narration.split(/\s+/).length < 8) throw new Error('نص التعليق الذي كتبه النموذج قصير جداً أو غير صالح');
+            if (!/[.!?؟…]$/.test(narration)) narration += '.';
+            v.title = String((j && j.title) || v.topic).slice(0, 80); v.narration = narration.slice(0, 2500);
+            appendAiMessage('agent', `✍️ <strong>نص التعليق (${v.title}):</strong><br>${v.narration}`);
+            return { filename: '' };
+        }
+        if (st.kind === 'vo_tts') {
+            const r = await runTtsGenerate(true, { text: v.narration, voice: v.voice, speed: v.speed });
+            v.audioId = r.clipId; v.audioDur = r.duration; v.segments = r.segments || [];
+            return { ...r };
+        }
+        if (st.kind === 'vo_brief') {
+            const total = (v.audioDur || 0) + 0.8;
+            const tl = (v.segments || []).map(s => `[${s.start.toFixed(1)}–${s.end.toFixed(1)}ث] ${String(s.text).replace(/\[[^\]]*\]/g, '').trim()}`).join('\n');
+            const asp = v.aspect || dom('ptAspect')?.value || '9:16';
+            const raw = await voLLM(VO_BRIEF_SYSTEM, `الموضوع: ${v.topic}\nالعنوان: ${v.title}\nالقياس: ${asp}\nمدة المشهد الإجمالية: ${total.toFixed(1)} ثانية (التعليق ينتهي عند ${(v.audioDur || 0).toFixed(1)} ث ثم يبقى المشهد ثابتاً قليلاً).\nنص التعليق مع توقيت كل جملة:\n${tl}\n\nاكتب الوصف التنفيذي للمشهد.`);
+            const brief = String(raw).replace(/^```\w*\n?|```$/g, '').trim();
+            if (brief.length < 250) throw new Error('وصف المشهد الذي كتبه النموذج قصير جداً');
+            v.brief = brief.slice(0, 6000);
+            return { filename: '' };
+        }
+        if (st.kind === 'vo_scene') {
+            const duration = Math.max(6, Math.min(120, Math.ceil((v.audioDur || 10) + 0.8)));
+            const params = { duration }; if (v.aspect) params.aspect = v.aspect;
+            window.__exportBitrate = 2500000; window.__pendingPoolSavePromise = null;
+            let r;
+            try { r = await runSingleActionObject({ type: 'painter_scene', label: v.title, brief: v.brief, params }); }
+            finally { window.__exportBitrate = null; }
+            let vid = null;
+            try { vid = await window.__pendingPoolSavePromise; } catch (_) {}
+            const c = vid && findClip(vid);
+            if (!c || c.name !== r.filename) vid = await addClipToPool(r.blob, r.filename, 'video', v.title);
+            v.videoId = vid;
+            return r;
+        }
+        if (st.kind === 'vo_merge') {
+            const r = await runMergeSelected(true, { videos: [v.videoId], audios: [v.audioId], mode: 'replace', fit: 'longest', compress: true });
+            v.finalId = r.clipId;
+            try { await removeClipFromPool(v.videoId); } catch (_) {} // المشهد الصامت الوسيط لم يعد لازماً
+            const c = findClip(r.clipId);
+            appendAiMessage('agent', `🎬 <strong>اكتمل الفيديو «${v.label}»</strong> — ${c && c.duration ? c.duration.toFixed(1) + ' ثانية، ' : ''}${formatBytes(r.blob.size)}. محفوظ في مخزن الفيديو (${r.clipId}).`);
+            return r;
+        }
+        throw new Error('مرحلة غير معروفة: ' + st.kind);
+    }
+
     const jobIsRetriable = err => /Failed to fetch|NetworkError|network|HTTP (5\d\d|429|408)|timeout|timed out|مهلة|تعذّر تحميل|ECONN|استجابة فارغة|فشل الرسام في إنتاج/i.test(String(err && err.message || err));
     const jobSleep = ms => new Promise(r => setTimeout(r, ms));
     async function jobPrepareTts(job, st) {
@@ -7303,6 +6920,7 @@ ${catalog}
     async function jobRunStage(job, i) {
         const st = job.stages[i];
         if (st.kind === 'tts_prepare') return await jobPrepareTts(job, st);
+        if (st.kind.startsWith('vo_')) return await runVoStage(job, st);
         const act = st.act;
         let attempt = 0;
         for (;;) {
@@ -7358,7 +6976,7 @@ ${catalog}
         const statusEl = document.getElementById('aiStepStatus');
         jobWakeAcquire(); jobStartTick(); jobEmit(job);
         if (job.needsRestore) { await jobRestoreContext(job); job.needsRestore = false; }
-        const isMontagePlan = job.stages.some(s => ['concat_pool', 'merge_selected', 'restore_original', 'select_pool_clip', 'painter_scene', 'painter_render', 'use_last_output'].includes(s.kind));
+        const isMontagePlan = job.stages.some(s => s.kind.startsWith('vo_') || ['merge_selected', 'concat_pool', 'restore_original', 'select_pool_clip', 'painter_scene', 'painter_render', 'use_last_output'].includes(s.kind));
         // عدة مشاهد: يُكتب كود المشهد التالي أثناء تصدير الحالي
         const paintIdx = job.stages.map((s, i) => (s.status !== 'done' && s.act && (s.kind === 'painter_scene' || s.kind === 'painter_render')) ? i : -1).filter(i => i >= 0);
         const startPre = idx => {
@@ -7367,7 +6985,6 @@ ${catalog}
             const brief = String(a.brief || a.html_brief || a.label || '').trim();
             if (!brief || !getEffectiveModel()) return;
             const p = a.params || {};
-            if (p.duration === 'auto' || p.autoDuration) return; // المدة تُعرف بعد توليد الصوت فقط
             const d = getPainterDims(p.aspect);
             const cfg = { w: d.w, h: d.h, dur: Math.max(1, Number(p.duration) || Number(document.getElementById('ptDuration')?.value) || 20), mediaBg: (p.bgMode || document.getElementById('ptBgMode')?.value) === 'media' && !!currentFile, ui: false };
             preByAct.set(a, generatePainterCode(brief, cfg).then(r => ({ ok: true, ...r }), e => ({ ok: false, error: e })));
@@ -7406,10 +7023,6 @@ ${catalog}
                 job.clipSeq = clipSeqCounter;
                 jobPersist(job); jobEmit(job);
 
-                if (result?.clipId) {
-                    const added = clipById(result.clipId);
-                    if (added) appendAiMessage('system', `🗂️ أُضيف إلى المخزن: ${clipTag(added)} — ${added.name}${added.duration ? ' (' + added.duration.toFixed(1) + 'ث)' : ''}`);
-                }
                 if (result?.transcript) { ranWhisper = true; appendAiMessage('agent', `🎙️ <strong>تم التفريغ (${result.transcript.chunks.length} مقطع زمني):</strong><br>${result.transcript.text}`); }
                 if (result?.ocrText !== undefined) appendAiMessage('agent', `📝 <strong>النص المستخرج (دقة ${result.confidence}%):</strong><br>${result.ocrText || 'لم يتم العثور على نص واضح.'}`);
                 const hasLater = job.stages.slice(i + 1).some(s => s.act);
@@ -7455,8 +7068,8 @@ ${catalog}
         actions = check.actions;
         if (!actions.length) { appendAiMessage('system', '⚠️ لا توجد إجراءات صالحة للتنفيذ.'); return; }
         // هل يتوفر ملف عند كل خطوة؟ المشاهد والدمج والمخزن تُنتج/تجلب ملفاً للخطوات التالية
-        const noFileOk = ['tts_generate', 'cs_motion_banner', 'painter_render', 'painter_scene', 'concat_pool', 'merge_selected', 'select_pool_clip', 'restore_original', 'use_last_output'];
-        const producers = ['painter_scene', 'painter_render', 'concat_pool', 'merge_selected', 'select_pool_clip', 'use_last_output', 'restore_original'];
+        const noFileOk = ['voiceover_video', 'merge_selected', 'tts_generate', 'cs_motion_banner', 'painter_render', 'painter_scene', 'concat_pool', 'select_pool_clip', 'restore_original', 'use_last_output'];
+        const producers = ['voiceover_video', 'merge_selected', 'painter_scene', 'painter_render', 'concat_pool', 'select_pool_clip', 'use_last_output', 'restore_original'];
         let haveFile = !!currentFile, fileOk = true;
         for (const a of actions) { const k = jobKindOf(a); if (!haveFile && !noFileOk.includes(k)) { fileOk = false; break; } if (producers.includes(k)) haveFile = true; }
         if (!fileOk) { appendAiMessage('system', '⚠️ يرجى رفع ملف فيديو أو صوت أو صورة أولاً ليتمكن الوكيل من معالجته.'); return; }
@@ -7490,6 +7103,8 @@ ${catalog}
         let prev = pv.style.display;
         new MutationObserver(() => { const cur = pv.style.display; if (cur !== prev) { if (cur === 'flex') delete pv.dataset.hidden; prev = cur; } sync(); }).observe(pv, { attributes: true, attributeFilter: ['style', 'data-hidden'] });
     })();
+
+    (function initPools() { renderClipPoolUI(); poolsRestore(); })();
 
     (function initTtsUi() {
         const sp = document.getElementById('ttsSpeed'), st = document.getElementById('ttsSteps');
